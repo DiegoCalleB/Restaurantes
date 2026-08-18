@@ -1,0 +1,12 @@
+{
+  "name": "restaurantes-deployment",
+  "version": "1.0.0",
+  "description": "Root package for Railway deployment",
+  "scripts": {
+    "build": "cd app && npm install && npm run build",
+    "start": "cd app && npx serve -s dist -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
