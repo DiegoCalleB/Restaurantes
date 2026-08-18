@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+::selection{background:#3B6EA533}
+</style>
+</helmet>
+<div style="display:flex;min-height:100vh;background:{{colors.bg}};color:{{colors.text}}">
+  <aside style="width:256px;flex:none;background:{{colors.sidebar}};padding:22px 14px;display:flex;flex-direction:column;gap:30px;position:sticky;top:0;height:100vh">
+    <div style="display:flex;align-items:center;gap:11px;padding:4px 8px 8px">
+      <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,{{colors.accent}},{{colors.accentDeep}});box-shadow:0 4px 10px -2px {{colors.accent}}66"></div>
+      <div>
+        <div style="font-size:15px;font-weight:800;letter-spacing:-.3px;color:#fff">Albaranes</div>
+        <div style="font-size:10.5px;color:{{colors.sidebarSoft}};font-weight:600;letter-spacing:.02em">CONTROL DE COMPRAS</div>
+      </div>
+    </div>
+    <nav style="display:flex;flex-direction:column;gap:3px">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="4">
+        <div style="{{n.style}}" onClick="{{n.onClick}}">
+          <div style="{{n.iconStyle}}"></div>
+          <span style="{{n.labelStyle}}">{{n.label}}</span>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto;padding:15px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
+        <div style="width:6px;height:6px;border-radius:50%;background:{{colors.success}}"></div>
+        <div style="font-size:11.5px;font-weight:700;color:#fff">Azure Document Intelligence</div>
+      </div>
+      <div style="font-size:11px;color:{{colors.sidebarSoft}};line-height:1.5">Conectado · sincronizando con Supabase</div>
+    </div>
+  </aside>
+
+  <main style="flex:1;padding:30px 44px 60px;min-width:0">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;gap:24px">
+      <div>
+        <div style="font-size:24px;font-weight:800;letter-spacing:-.5px">{{title}}</div>
+        <div style="font-size:13.5px;color:{{colors.textSoft}};margin-top:5px;font-weight:500">{{subtitle}}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex:none">
+        <div style="display:flex;padding:3px;border-radius:11px;background:{{colors.surface}};border:1px solid {{colors.border}}">
+          <div style="{{roleEncargadoStyle}}" onClick="{{setRoleEncargado}}">Mi restaurante</div>
+          <div style="{{roleAdminStyle}}" onClick="{{setRoleAdmin}}">Todos los locales</div>
+        </div>
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,{{colors.accent}},{{colors.accentDeep}});color:white;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;box-shadow:0 4px 10px -3px {{colors.accent}}88">JM</div>
+      </div>
+    </div>
+
+    <sc-if value="{{isDashboard}}" hint-placeholder-val="{{true}}">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px">
+        <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+          <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+              <div style="width:8px;height:8px;border-radius:3px;background:{{k.dot}}"></div>
+              <div style="font-size:11.5px;color:{{colors.textSoft}};font-weight:700;text-transform:uppercase;letter-spacing:.03em">{{k.label}}</div>
+            </div>
+            <div style="font-size:27px;font-weight:800;letter-spacing:-.5px">{{k.value}}</div>
+            <div style="font-size:12px;font-weight:700;margin-top:6px;{{k.trendStyle}}">{{k.trend}}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px;align-items:stretch">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:24px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:800;margin-bottom:18px">Gasto por proveedor · este mes</div>
+          <sc-for list="{{gastoBars}}" as="p" hint-placeholder-count="5">
+            <div style="margin-bottom:15px">
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px">
+                <span style="font-weight:700">{{p.nombre}}</span>
+                <span style="color:{{colors.textSoft}};font-weight:600">€{{p.importeTotal}}</span>
+              </div>
+              <div style="height:9px;border-radius:6px;background:{{colors.bg}};overflow:hidden">
+                <div style="height:100%;border-radius:6px;background:linear-gradient(90deg,{{colors.accentLight}},{{colors.accent}});width:{{p.pct}}%"></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:24px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:800;margin-bottom:18px">Incidencias por tipo</div>
+          <div style="height:10px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:18px">
+            <sc-for list="{{tiposIncidencia}}" as="t" hint-placeholder-count="4">
+              <div style="height:100%;background:{{t.color}};width:{{t.pct}}%"></div>
+            </sc-for>
+          </div>
+          <sc-for list="{{tiposIncidencia}}" as="t" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-top:1px solid {{colors.bg}}">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="width:7px;height:7px;border-radius:2px;background:{{t.color}}"></div>
+                <span style="font-size:13px;font-weight:600">{{t.label}}</span>
+              </div>
+              <span style="font-size:13px;font-weight:800">{{t.count}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{isAdmin}}" hint-placeholder-val="{{false}}">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:24px;margin-bottom:14px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:800;margin-bottom:16px">Locales de la cadena</div>
+          <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;font-size:11px;font-weight:700;color:{{colors.textSoft}};text-transform:uppercase;letter-spacing:.03em;padding:0 4px 10px">
+            <div>Local</div><div>Albaranes</div><div>Gasto mes</div><div>Incidencias</div>
+          </div>
+          <sc-for list="{{locales}}" as="l" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;align-items:center;padding:12px 4px;border-top:1px solid {{colors.bg}};font-size:13.5px">
+              <div style="display:flex;align-items:center;gap:10px;font-weight:700">
+                <div style="width:28px;height:28px;border-radius:9px;background:{{l.avatarBg}};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">{{l.initials}}</div>
+                {{l.nombre}}
+              </div>
+              <div>{{l.albaranes}}</div>
+              <div>€{{l.gasto}}</div>
+              <div style="{{l.incStyle}}">{{l.incidencias}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:24px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+        <div style="font-size:14.5px;font-weight:800;margin-bottom:16px">Actividad reciente</div>
+        <div style="display:grid;grid-template-columns:1.2fr 1.6fr 1fr 1fr 1fr;font-size:11px;font-weight:700;color:{{colors.textSoft}};text-transform:uppercase;letter-spacing:.03em;padding:0 4px 10px">
+          <div>Nº albarán</div><div>Proveedor</div><div>Fecha</div><div>Importe</div><div>Estado</div>
+        </div>
+        <sc-for list="{{recientes}}" as="a" hint-placeholder-count="5">
+          <div style="{{a.rowStyle}}" onClick="{{a.onClick}}">
+            <div style="font-weight:700">{{a.numero}}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:26px;height:26px;border-radius:8px;background:{{a.avatarBg}};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex:none">{{a.initials}}</div>
+              {{a.proveedor}}
+            </div>
+            <div style="color:{{colors.textSoft}};font-weight:500">{{a.fecha}}</div>
+            <div style="font-weight:600">€{{a.importe}}</div>
+            <div><span style="{{a.statusStyle}}">{{a.statusLabel}}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isAlbaranes}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;gap:10px;margin-bottom:18px">
+        <div style="font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:10px;background:{{colors.surface}};border:1px solid {{colors.border}}">Proveedor: Todos</div>
+        <div style="font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:10px;background:{{colors.surface}};border:1px solid {{colors.border}}">Estado: Todos</div>
+        <div style="font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:10px;background:{{colors.surface}};border:1px solid {{colors.border}}">Este mes</div>
+      </div>
+      <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+        <div style="display:grid;grid-template-columns:1.2fr 1.8fr 1fr 1fr 1.2fr 0.6fr;font-size:11px;font-weight:700;color:{{colors.textSoft}};text-transform:uppercase;letter-spacing:.03em;padding:14px 22px;background:{{colors.bg}}">
+          <div>Nº albarán</div><div>Proveedor</div><div>Fecha</div><div>Importe</div><div>Estado</div><div></div>
+        </div>
+        <sc-for list="{{albaranesView}}" as="a" hint-placeholder-count="6">
+          <div style="{{a.tableRowStyle}}" onClick="{{a.onClick}}">
+            <div style="font-weight:700">{{a.numero}}</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:26px;height:26px;border-radius:8px;background:{{a.avatarBg}};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex:none">{{a.initials}}</div>
+              {{a.proveedor}}
+            </div>
+            <div style="color:{{colors.textSoft}};font-weight:500">{{a.fecha}}</div>
+            <div style="font-weight:600">€{{a.importe}}</div>
+            <div><span style="{{a.statusStyle}}">{{a.statusLabel}}</span></div>
+            <div style="color:{{colors.accent}};font-weight:700;font-size:12.5px">Ver →</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isDetalle}}" hint-placeholder-val="{{false}}">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div style="font-size:12.5px;font-weight:700;color:{{colors.accent}};cursor:pointer" onClick="{{backToList}}">← Volver a Albaranes</div>
+      </div>
+      <sc-if value="{{flaggedCount}}" hint-placeholder-val="{{false}}">
+        <div style="display:flex;align-items:center;gap:12px;background:{{colors.dangerSoft}};border:1px solid {{colors.danger}}44;border-radius:14px;padding:15px 18px;margin-bottom:20px">
+          <div style="width:30px;height:30px;border-radius:9px;background:{{colors.danger}};flex:none"></div>
+          <div style="font-size:13.5px;font-weight:700;color:{{colors.danger}}">Se han detectado {{flaggedCount}} incidencias en este albarán frente al pedido registrado.</div>
+        </div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:20px;align-items:start">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:16px;position:sticky;top:16px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="aspect-ratio:3/4;border-radius:12px;background:repeating-linear-gradient(135deg,{{colors.bg}},{{colors.bg}} 10px,{{colors.border}} 10px,{{colors.border}} 20px);display:flex;align-items:center;justify-content:center;text-align:center;padding:20px">
+            <span style="font-family:ui-monospace,monospace;font-size:11.5px;color:{{colors.textSoft}};background:{{colors.surface}};padding:8px 12px;border-radius:8px;border:1px solid {{colors.border}}">documento escaneado<br/>[imagen del albarán]</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:22px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <div style="font-size:14.5px;font-weight:800">Datos extraídos</div>
+              <span style="{{selStatusStyle}}">{{selStatusLabel}}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <sc-for list="{{headerFields}}" as="f" hint-placeholder-count="4">
+                <div>
+                  <div style="font-size:11.5px;color:{{colors.textSoft}};font-weight:700;margin-bottom:5px">{{f.label}}</div>
+                  <div style="font-size:15px;font-weight:700;margin-bottom:7px">{{f.value}}</div>
+                  <span style="{{f.badgeStyle}}">{{f.badgeLabel}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;padding:22px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+            <div style="font-size:14.5px;font-weight:800;margin-bottom:16px">Líneas de producto</div>
+            <div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr;font-size:11px;font-weight:700;color:{{colors.textSoft}};text-transform:uppercase;letter-spacing:.03em;padding:0 4px 8px">
+              <div>Producto</div><div>Cant.</div><div>Precio ud.</div><div>Total</div>
+            </div>
+            <sc-for list="{{itemsView}}" as="it" hint-placeholder-count="3">
+              <div style="border-radius:10px">
+                <div style="display:grid;grid-template-columns:2fr 0.7fr 0.9fr 0.9fr;padding:11px 8px;font-size:13.5px;align-items:center;border-radius:10px" style="{{it.rowStyle}}">
+                  <div style="font-weight:600">{{it.producto}}</div>
+                  <div>{{it.cantidad}}</div>
+                  <div>€{{it.precioUnit}}</div>
+                  <div style="font-weight:700">€{{it.total}}</div>
+                </div>
+                <sc-if value="{{it.flag}}" hint-placeholder-val="{{false}}">
+                  <div style="font-size:12px;color:{{colors.danger}};padding:0 8px 12px;font-weight:700">⚠ {{it.motivo}}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;text-align:center;padding:14px;border-radius:12px;background:linear-gradient(135deg,{{colors.accent}},{{colors.accentDeep}});color:white;font-weight:800;font-size:13.5px;cursor:pointer;box-shadow:0 6px 16px -4px {{colors.accent}}77">Confirmar validación</div>
+            <div style="flex:1;text-align:center;padding:14px;border-radius:12px;border:1px solid {{colors.border}};font-weight:800;font-size:13.5px;cursor:pointer;background:{{colors.surface}}">Editar manualmente</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isProveedores}}" hint-placeholder-val="{{false}}">
+      <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+        <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1fr 1fr;font-size:11px;font-weight:700;color:{{colors.textSoft}};text-transform:uppercase;letter-spacing:.03em;padding:14px 22px;background:{{colors.bg}}">
+          <div>Proveedor</div><div>Albaranes</div><div>Importe total</div><div>Incidencias</div><div>Var. precio</div><div>Puntualidad</div>
+        </div>
+        <sc-for list="{{proveedoresView}}" as="p" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1fr 1fr;align-items:center;padding:14px 22px;border-top:1px solid {{colors.bg}};font-size:13.5px">
+            <div style="display:flex;align-items:center;gap:10px;font-weight:700">
+              <div style="width:28px;height:28px;border-radius:9px;background:{{p.avatarBg}};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">{{p.initials}}</div>
+              {{p.nombre}}
+            </div>
+            <div>{{p.numAlbaranes}}</div>
+            <div>€{{p.importeTotal}}</div>
+            <div style="{{p.incStyle}}">{{p.incidenciasPct}}%</div>
+            <div>+{{p.variacionPrecio}}%</div>
+            <div>{{p.puntualidad}}%</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isSubir}}" hint-placeholder-val="{{false}}">
+      <sc-if value="{{isIdle}}" hint-placeholder-val="{{true}}">
+        <div style="background:{{colors.surface}};border:2px dashed {{colors.border}};border-radius:20px;padding:64px 20px;text-align:center;cursor:pointer" onClick="{{simulateUpload}}">
+          <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,{{colors.accentSoft}},{{colors.accent}}22);margin:0 auto 18px;border:1px solid {{colors.accent}}33"></div>
+          <div style="font-size:15.5px;font-weight:800;margin-bottom:7px">Arrastra el PDF o la foto del albarán aquí</div>
+          <div style="font-size:13px;color:{{colors.textSoft}};font-weight:500">o haz clic para simular la subida y ver la extracción automática</div>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          <span style="font-size:12.5px;color:{{colors.textSoft}};font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px" onClick="{{simulateIllegible}}">Simular un albarán ilegible</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{isUploading}}" hint-placeholder-val="{{false}}">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:20px;padding:64px 20px;text-align:center;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:700;margin-bottom:18px">Subiendo documento…</div>
+          <div style="height:8px;width:280px;margin:0 auto;border-radius:6px;background:{{colors.bg}};overflow:hidden"><div style="height:100%;width:40%;border-radius:6px;background:linear-gradient(90deg,{{colors.accentLight}},{{colors.accent}})"></div></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isProcessing}}" hint-placeholder-val="{{false}}">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:20px;padding:64px 20px;text-align:center;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:700;margin-bottom:18px">Procesando con Azure Document Intelligence…</div>
+          <div style="height:8px;width:280px;margin:0 auto;border-radius:6px;background:{{colors.bg}};overflow:hidden"><div style="height:100%;width:80%;border-radius:6px;background:linear-gradient(90deg,{{colors.accentLight}},{{colors.accent}})"></div></div>
+          <div style="font-size:12.5px;color:{{colors.textSoft}};margin-top:16px;font-weight:500">Extrayendo proveedor, líneas de producto e importes…</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.border}};border-radius:20px;padding:32px;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="font-size:14.5px;font-weight:800;color:{{colors.success}};margin-bottom:18px">✓ Documento procesado — listo para revisión</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:{{colors.bg}};border-radius:14px">
+            <div>
+              <div style="font-weight:800;font-size:14.5px">A-2026-0847 · Distribuciones Ibérica S.L.</div>
+              <div style="font-size:12.5px;color:{{colors.textSoft}};margin-top:3px;font-weight:500">2 campos con confianza media — se recomienda revisión manual</div>
+            </div>
+            <div style="padding:12px 20px;border-radius:11px;background:linear-gradient(135deg,{{colors.accent}},{{colors.accentDeep}});color:white;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 6px 16px -4px {{colors.accent}}77" onClick="{{goToPending}}">Revisar ahora</div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{isError}}" hint-placeholder-val="{{false}}">
+        <div style="background:{{colors.surface}};border:1px solid {{colors.warning}}55;border-radius:20px;padding:44px 32px;text-align:center;box-shadow:0 1px 2px rgba(20,15,10,.03)">
+          <div style="width:48px;height:48px;border-radius:14px;background:{{colors.warningSoft}};margin:0 auto 18px"></div>
+          <div style="font-size:15px;font-weight:800;margin-bottom:8px">No hemos podido leer bien este documento</div>
+          <div style="font-size:13px;color:{{colors.textSoft}};font-weight:500;margin-bottom:22px">La imagen está borrosa o incompleta. Repite la captura o introduce los datos manualmente.</div>
+          <div style="display:flex;gap:10px;justify-content:center">
+            <div style="padding:13px 20px;border-radius:11px;background:linear-gradient(135deg,{{colors.accent}},{{colors.accentDeep}});color:white;font-weight:800;font-size:13px;cursor:pointer" onClick="{{retryScan}}">Repetir foto/escaneo</div>
+            <div style="padding:13px 20px;border-radius:11px;border:1px solid {{colors.border}};font-weight:800;font-size:13px;cursor:pointer" onClick="{{goToPending}}">Introducir datos a mano</div>
+          </div>
+        </div>
+      </sc-if>
+    </sc-if>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { view: 'dashboard', selectedId: 1, uploadStage: 0, role: 'encargado' };
+
+  colors = {
+    bg: 'oklch(96.5% 0.007 70)', surface: '#ffffff', border: 'oklch(90% 0.007 70)',
+    text: 'oklch(20% 0.01 70)', textSoft: 'oklch(48% 0.012 70)',
+    sidebar: 'oklch(23% 0.015 55)', sidebarSoft: 'oklch(65% 0.015 55)',
+    accent: '#3B6EA5', accentDeep: '#2C5580', accentLight: '#8FB2D6', accentSoft: '#E3EAF3',
+    success: 'oklch(52% 0.13 150)', successSoft: 'oklch(94% 0.045 150)',
+    warning: 'oklch(62% 0.15 75)', warningSoft: 'oklch(95% 0.05 80)',
+    danger: 'oklch(54% 0.18 25)', dangerSoft: 'oklch(95% 0.045 25)',
+  };
+
+  albaranes = [
+    { id:1, numero:'A-2026-0842', proveedor:'Distribuciones Ibérica S.L.', fecha:'08/08/2026', importe:'493.40', estado:'incidencia',
+      confProveedor:98, confNumero:96, confFecha:99, confImporte:88,
+      items:[
+        {producto:'Solomillo de ternera 5kg', cantidad:10, precioUnit:'24.90', total:'249.00', flag:false},
+        {producto:'Aceite de oliva virgen 5L', cantidad:8, precioUnit:'19.50', total:'156.00', flag:true, motivo:'Cantidad recibida (8) no coincide con el pedido (6)'},
+        {producto:'Harina de trigo 25kg', cantidad:4, precioUnit:'22.10', total:'88.40', flag:true, motivo:'Precio +17,9% sobre el precio pactado (18,75€)'},
+      ]},
+    { id:2, numero:'A-2026-0839', proveedor:'Mercafresh Mayoristas', fecha:'07/08/2026', importe:'318.60', estado:'validado',
+      confProveedor:99, confNumero:98, confFecha:99, confImporte:97,
+      items:[
+        {producto:'Lechuga iceberg caja 12ud', cantidad:6, precioUnit:'14.20', total:'85.20', flag:false},
+        {producto:'Tomate rama 10kg', cantidad:8, precioUnit:'16.80', total:'134.40', flag:false},
+        {producto:'Cebolla 25kg', cantidad:4, precioUnit:'24.75', total:'99.00', flag:false},
+      ]},
+    { id:3, numero:'A-2026-0835', proveedor:'Carnes Selectas del Norte', fecha:'06/08/2026', importe:'612.00', estado:'validado',
+      confProveedor:97, confNumero:99, confFecha:98, confImporte:96,
+      items:[
+        {producto:'Chuletón de vaca madurado 8kg', cantidad:2, precioUnit:'186.00', total:'372.00', flag:false},
+        {producto:'Costilla de cerdo 15kg', cantidad:2, precioUnit:'120.00', total:'240.00', flag:false},
+      ]},
+    { id:4, numero:'A-2026-0831', proveedor:'Pescados La Rada', fecha:'05/08/2026', importe:'204.50', estado:'incidencia',
+      confProveedor:95, confNumero:94, confFecha:99, confImporte:93,
+      items:[
+        {producto:'Merluza fresca 10kg', cantidad:10, precioUnit:'20.45', total:'204.50', flag:true, motivo:'Producto entregado no coincide con el pedido (Rape 10kg)'},
+      ]},
+    { id:5, numero:'A-2026-0828', proveedor:'Bodega Vinos del Duero', fecha:'04/08/2026', importe:'276.00', estado:'validado',
+      confProveedor:99, confNumero:99, confFecha:99, confImporte:99,
+      items:[
+        {producto:'Vino tinto crianza caja 6uds', cantidad:8, precioUnit:'22.50', total:'180.00', flag:false},
+        {producto:'Vino blanco caja 6uds', cantidad:6, precioUnit:'16.00', total:'96.00', flag:false},
+      ]},
+    { id:6, numero:'A-2026-0847', proveedor:'Distribuciones Ibérica S.L.', fecha:'08/08/2026', importe:'171.20', estado:'pendiente',
+      confProveedor:96, confNumero:90, confFecha:97, confImporte:84,
+      items:[
+        {producto:'Aceite de girasol 5L', cantidad:6, precioUnit:'12.80', total:'76.80', flag:false},
+        {producto:'Pimentón dulce 1kg', cantidad:8, precioUnit:'11.80', total:'94.40', flag:false},
+      ]},
+  ];
+
+  proveedores = [
+    {nombre:'Distribuciones Ibérica S.L.', numAlbaranes:34, importeTotal:'18420.00', incidenciasPct:12, variacionPrecio:6.2, puntualidad:91},
+    {nombre:'Mercafresh Mayoristas', numAlbaranes:28, importeTotal:'12980.00', incidenciasPct:4, variacionPrecio:1.1, puntualidad:98},
+    {nombre:'Carnes Selectas del Norte', numAlbaranes:19, importeTotal:'9640.00', incidenciasPct:2, variacionPrecio:0.8, puntualidad:100},
+    {nombre:'Pescados La Rada', numAlbaranes:22, importeTotal:'7310.00', incidenciasPct:9, variacionPrecio:3.4, puntualidad:87},
+    {nombre:'Bodega Vinos del Duero', numAlbaranes:11, importeTotal:'5240.00', incidenciasPct:0, variacionPrecio:0.2, puntualidad:100},
+  ];
+
+  locales = [
+    {nombre:'La Marea · Centro', albaranes:41, gasto:'21480.00', incidencias:5},
+    {nombre:'La Marea · Puerto', albaranes:33, gasto:'17920.00', incidencias:3},
+    {nombre:'La Marea · Norte', albaranes:27, gasto:'14260.00', incidencias:7},
+    {nombre:'La Marea · Sur', albaranes:19, gasto:'9640.00', incidencias:2},
+  ];
+
+  avatarPalette = ['#3B6EA5','#8B5E3C','#5C8A66','#A05C6B','#6B6191','#9C7C3E'];
+  initialsFor(name){ return name.split(' ').filter(w=>w.length>2||/^[A-ZÁÉÍÓÚ]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase(); }
+  avatarBgFor(name){ let h=0; for(const ch of name) h = (h*31 + ch.charCodeAt(0)) % this.avatarPalette.length; return this.avatarPalette[h]; }
+
+  setView(view){ this.setState({ view, uploadStage: view === 'subir' ? 0 : this.state.uploadStage }); }
+  viewDetail(id){ this.setState({ view: 'detalle', selectedId: id }); }
+  setRole(role){ this.setState({ role }); }
+  simulateUpload(){
+    this.setState({ uploadStage: 1 });
+    setTimeout(() => this.setState({ uploadStage: 2 }), 900);
+    setTimeout(() => this.setState({ uploadStage: 3 }), 2200);
+  }
+  simulateIllegible(){
+    this.setState({ uploadStage: 1 });
+    setTimeout(() => this.setState({ uploadStage: 2 }), 900);
+    setTimeout(() => this.setState({ uploadStage: 4 }), 2200);
+  }
+  retryScan(){ this.setState({ uploadStage: 0 }); }
+  getSelected(){ return this.albaranes.find(a => a.id === this.state.selectedId) || this.albaranes[0]; }
+
+  confMeta(conf){
+    const c = this.colors;
+    if (conf >= 95) return { label:'confianza alta', color:c.success, bg:c.successSoft };
+    if (conf >= 88) return { label:'revisar', color:c.warning, bg:c.warningSoft };
+    return { label:'confianza baja', color:c.danger, bg:c.dangerSoft };
+  }
+  statusMeta(estado){
+    const c = this.colors;
+    if (estado === 'validado') return { label:'Validado', color:c.success, bg:c.successSoft };
+    if (estado === 'incidencia') return { label:'Incidencia', color:c.danger, bg:c.dangerSoft };
+    return { label:'Pendiente revisión', color:c.warning, bg:c.warningSoft };
+  }
+
+  renderVals(){
+    const c = this.colors;
+    const view = this.state.view;
+    const isAdmin = this.state.role === 'admin';
+
+    const navDefs = [
+      { key:'dashboard', label:'Panel general', shape:'square' },
+      { key:'albaranes', label:'Albaranes', shape:'circle' },
+      { key:'subir', label:'Subir albarán', shape:'diamond' },
+      { key:'proveedores', label:'Proveedores', shape:'square' },
+    ];
+    const nav = navDefs.map(n => {
+      const active = n.key === view;
+      return {
+        ...n,
+        onClick: () => this.setView(n.key),
+        style: { display:'flex', alignItems:'center', gap:12, padding:'11px 14px', borderRadius:11, cursor:'pointer', background: active ? 'rgba(255,255,255,.1)' : 'transparent' },
+        labelStyle: { fontSize:14, fontWeight: active ? 700 : 500, color: active ? '#fff' : c.sidebarSoft },
+        iconStyle: { width:8, height:8, borderRadius: n.shape==='circle' ? '50%' : n.shape==='diamond' ? 2 : 3, background: active ? c.accentLight : 'rgba(255,255,255,.25)', transform: n.shape==='diamond' ? 'rotate(45deg)' : 'none', flex:'none' },
+      };
+    });
+
+    const titles = {
+      dashboard: ['Panel general', 'Resumen de compras y control de albaranes'],
+      albaranes: ['Albaranes', 'Histórico de albaranes recibidos y su estado'],
+      detalle: ['Revisión de albarán', 'Datos extraídos automáticamente por Azure Document Intelligence'],
+      proveedores: ['Proveedores', 'Comparativa de precio, incidencias y puntualidad'],
+      subir: ['Subir albarán', 'Digitaliza un nuevo albarán en segundos'],
+    };
+    const [title, subtitle] = titles[view];
+
+    const roleBtnBase = { padding:'8px 16px', borderRadius:8, fontSize:12.5, fontWeight:700, cursor:'pointer' };
+    const roleEncargadoStyle = { ...roleBtnBase, background: !isAdmin ? c.accent : 'transparent', color: !isAdmin ? '#fff' : c.textSoft };
+    const roleAdminStyle = { ...roleBtnBase, background: isAdmin ? c.accent : 'transparent', color: isAdmin ? '#fff' : c.textSoft };
+
+    const totalAlbaranes = isAdmin ? this.locales.reduce((s,l)=>s+l.albaranes,0) : this.albaranes.length;
+    const totalGasto = isAdmin ? this.locales.reduce((s,l)=>s+parseFloat(l.gasto),0).toFixed(2) : this.albaranes.reduce((s,a) => s + parseFloat(a.importe), 0).toFixed(2);
+    const totalIncidencias = isAdmin ? this.locales.reduce((s,l)=>s+l.incidencias,0) : this.albaranes.reduce((s,a) => s + a.items.filter(i=>i.flag).length, 0);
+    const proveedoresActivos = this.proveedores.length;
+
+    const kpis = [
+      { label:'Albaranes (mes)', value: totalAlbaranes, trend:'▲ 8% vs mes anterior', trendStyle:`color:${c.success}`, dot:c.accent },
+      { label:'Gasto total (mes)', value:'€'+totalGasto, trend:'▲ 4,1% vs mes anterior', trendStyle:`color:${c.success}`, dot:c.accentDeep },
+      { label:'Incidencias detectadas', value:totalIncidencias, trend:'▼ 2 menos que el mes pasado', trendStyle:`color:${c.success}`, dot:c.danger },
+      { label:'Proveedores activos', value:proveedoresActivos, trend:'sin cambios', trendStyle:`color:${c.textSoft}`, dot:c.success },
+    ];
+
+    const maxGasto = Math.max(...this.proveedores.map(p => parseFloat(p.importeTotal)));
+    const gastoBars = this.proveedores.map(p => ({ ...p, pct: Math.round(parseFloat(p.importeTotal)/maxGasto*100) }));
+
+    const tiposIncidenciaRaw = [
+      { label:'Diferencia de precio', count:6, color:c.danger },
+      { label:'Cantidad no coincide', count:5, color:c.warning },
+      { label:'Producto no coincide', count:3, color:c.accent },
+      { label:'Datos ilegibles (OCR)', count:3, color:c.textSoft },
+    ];
+    const totalTipos = tiposIncidenciaRaw.reduce((s,t)=>s+t.count,0);
+    const tiposIncidencia = tiposIncidenciaRaw.map(t => ({ ...t, pct: Math.round(t.count/totalTipos*100) }));
+
+    const locales = this.locales.map(l => ({
+      ...l, initials: this.initialsFor(l.nombre), avatarBg: this.avatarBgFor(l.nombre),
+      incStyle: { fontWeight:800, color: l.incidencias>=6 ? c.danger : l.incidencias>=3 ? c.warning : c.success },
+    }));
+
+    const rowBase = { display:'grid', gridTemplateColumns:'1.2fr 1.6fr 1fr 1fr 1fr', alignItems:'center', padding:'12px 8px', borderTop:`1px solid ${c.bg}`, cursor:'pointer', fontSize:13.5, borderRadius:10 };
+    const tableRowBase = { display:'grid', gridTemplateColumns:'1.2fr 1.8fr 1fr 1fr 1.2fr 0.6fr', alignItems:'center', padding:'14px 22px', borderTop:`1px solid ${c.bg}`, cursor:'pointer', fontSize:13.5 };
+    const withStatus = (a) => {
+      const m = this.statusMeta(a.estado);
+      return { ...a, initials: this.initialsFor(a.proveedor), avatarBg: this.avatarBgFor(a.proveedor),
+        statusLabel: m.label, statusStyle: { color:m.color, background:m.bg, padding:'4px 10px', borderRadius:20, fontSize:12, fontWeight:700, display:'inline-block' },
+        onClick: () => this.viewDetail(a.id), rowStyle: rowBase, tableRowStyle: tableRowBase };
+    };
+    const recientes = this.albaranes.slice(0,5).map(withStatus);
+    const albaranesView = this.albaranes.map(withStatus);
+
+    const selected = this.getSelected();
+    const headerFields = [
+      { label:'Proveedor', value: selected.proveedor, conf: selected.confProveedor },
+      { label:'Nº albarán', value: selected.numero, conf: selected.confNumero },
+      { label:'Fecha', value: selected.fecha, conf: selected.confFecha },
+      { label:'Importe total', value: '€' + selected.importe, conf: selected.confImporte },
+    ].map(f => {
+      const m = this.confMeta(f.conf);
+      return { ...f, badgeStyle: { color:m.color, background:m.bg, fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:12 }, badgeLabel: f.conf + '% · ' + m.label };
+    });
+    const itemsView = selected.items.map(it => ({ ...it, rowStyle: it.flag ? { background:c.dangerSoft } : {} }));
+    const flaggedCount = selected.items.filter(i=>i.flag).length;
+    const selStatusMeta = this.statusMeta(selected.estado);
+
+    const proveedoresView = this.proveedores.map(p => {
+      const incColor = p.incidenciasPct >= 8 ? c.danger : p.incidenciasPct >= 3 ? c.warning : c.success;
+      return { ...p, initials: this.initialsFor(p.nombre), avatarBg: this.avatarBgFor(p.nombre), incStyle: { color: incColor, fontWeight:800 } };
+    });
+
+    return {
+      colors: c, nav, title, subtitle, isAdmin,
+      roleEncargadoStyle, roleAdminStyle, setRoleEncargado: () => this.setRole('encargado'), setRoleAdmin: () => this.setRole('admin'),
+      isDashboard: view==='dashboard', isAlbaranes: view==='albaranes', isDetalle: view==='detalle', isProveedores: view==='proveedores', isSubir: view==='subir',
+      kpis, gastoBars, tiposIncidencia, locales, recientes, albaranesView,
+      headerFields, itemsView, flaggedCount,
+      selStatusLabel: selStatusMeta.label,
+      selStatusStyle: { color:selStatusMeta.color, background:selStatusMeta.bg, padding:'6px 13px', borderRadius:20, fontSize:12.5, fontWeight:700, display:'inline-block' },
+      proveedoresView,
+      isIdle: this.state.uploadStage===0, isUploading: this.state.uploadStage===1, isProcessing: this.state.uploadStage===2, isDone: this.state.uploadStage===3, isError: this.state.uploadStage===4,
+      simulateUpload: () => this.simulateUpload(),
+      simulateIllegible: () => this.simulateIllegible(),
+      retryScan: () => this.retryScan(),
+      goToPending: () => this.viewDetail(6),
+      backToList: () => this.setView('albaranes'),
+    };
+  }
+}
+</script>
+</body>
+</html>

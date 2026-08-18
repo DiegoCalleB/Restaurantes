@@ -1,0 +1,112 @@
+:root {
+  --font-anthropic-sans: "Manrope", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bg: #F7F7F7;
+  --surface: #ffffff;
+  --border: #EAEAEA;
+  --text: #1A1A1A;
+  --textSoft: #737373;
+  --sidebar: #111111;
+  --sidebarSoft: #888888;
+  --accent: #D6A848;
+  --accentDeep: #B58A30;
+  --accentLight: #E8CA82;
+  --accentSoft: #FDF9F0;
+  --success: oklch(52% 0.13 150);
+  --successSoft: oklch(94% 0.045 150);
+  --warning: oklch(62% 0.15 75);
+  --warningSoft: oklch(95% 0.05 80);
+  --danger: oklch(54% 0.18 25);
+  --dangerSoft: oklch(95% 0.045 25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-anthropic-sans);
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: #3B6EA533;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive Layout Classes */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  flex-direction: row;
+}
+
+.sidebar {
+  width: 256px;
+  background: var(--sidebar);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 20px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.main-content {
+  flex: 1;
+  background: var(--bg);
+  padding: 40px;
+  overflow-y: auto;
+}
+
+/* Mobile Toggle */
+.mobile-nav-toggle {
+  display: none;
+  background: var(--sidebar);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2000;
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    padding: 20px;
+    padding-top: 60px; /* Space for the mobile header */
+  }
+
+  .mobile-nav-toggle {
+    display: block;
+  }
+}
