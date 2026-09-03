@@ -52,7 +52,7 @@ async def extraer_html(url):
 
 def parsear_carta_con_gemini(texto_web, nombre_restaurante):
     print(f"🤖 Pidiendo a Gemini que extraiga la carta de {nombre_restaurante}...")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     prompt = f"""
     Eres un experto extractor de datos. Te voy a pasar el texto extraído de la página web de un restaurante.
@@ -100,7 +100,7 @@ def parsear_carta_con_gemini(texto_web, nombre_restaurante):
         return []
 
 def generar_escandallo_con_gemini(nombre_plato):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     prompt = f"""
     Eres un chef experto. Voy a darte el nombre de un plato y necesito que deduzcas cuáles son sus ingredientes principales (el escandallo).

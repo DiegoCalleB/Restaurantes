@@ -101,7 +101,7 @@ export async function extraerDatosAlbaran(file) {
   };
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.5-flash-lite',
     contents: [
       {
         role: 'user',
@@ -198,7 +198,7 @@ export async function extraerDatosCarta(file) {
   };
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.5-flash-lite',
     contents: [
       {
         role: 'user',
@@ -281,7 +281,7 @@ ${JSON.stringify(contextoDatos)}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash-lite',
       contents,
       config: {
         tools: [{

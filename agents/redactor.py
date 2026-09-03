@@ -20,7 +20,7 @@ if not SUPABASE_URL or not SUPABASE_KEY or not GEMINI_API_KEY:
 
 def generar_pitch_gemini(medio_nombre, medio_tipo, medio_enfoque, nombre_restaurante):
     print(f"  🧠 Pensando el pitch para {medio_nombre} ({nombre_restaurante})...")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
     
     contexto_extra = ""
     if "Mercado" in nombre_restaurante or "Tirso" in nombre_restaurante:

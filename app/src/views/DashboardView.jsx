@@ -5,10 +5,10 @@ import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-export default function DashboardView({ isAdmin, setView, setSelectedId, setAlbaranesFilter, albaranesData = [], proveedoresData = [], localesData = [] }) {
-  const totalAlbaranes = isAdmin ? localesData.reduce((s,l)=>s+l.albaranes,0) : albaranesData.length;
-  const totalGasto = isAdmin ? localesData.reduce((s,l)=>s+parseFloat(l.gasto),0).toFixed(2) : albaranesData.reduce((s,a) => s + parseFloat(a.importe), 0).toFixed(2);
-  const totalIncidencias = isAdmin ? localesData.reduce((s,l)=>s+l.incidencias,0) : albaranesData.reduce((s,a) => s + (a.items ? a.items.filter(i=>i.flag).length : 0), 0);
+export default function DashboardView({ isAdmin, setView, setSelectedId, setAlbaranesFilter, albaranesData = [], allAlbaranes = [], proveedoresData = [], localesData = [] }) {
+  const totalAlbaranes = albaranesData.length;
+  const totalGasto = albaranesData.reduce((s, a) => s + (parseFloat(a.importe) || 0), 0).toFixed(2);
+  const totalIncidencias = albaranesData.reduce((s, a) => s + (a.items ? a.items.filter(i => i.flag).length : 0), 0);
 
   // Calcular tipos de incidencias reales
   const incidenciasPrecio = albaranesData.reduce((s, a) => s + (a.items ? a.items.filter(i => i.flag && i.motivo?.toLowerCase().includes('precio')).length : 0), 0);
@@ -16,12 +16,12 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
 
   const kpis = [
     { label:'Albaranes (mes)', value: totalAlbaranes, trend:'▲ 8% vs mes anterior', trendColor:'var(--success)', dot:'var(--accent)' },
-    { label:'Gasto total (mes)', value:'€'+totalGasto, trend:'▲ 4,1% vs mes anterior', trendColor:'var(--success)', dot:'var(--accentDeep)' },
-    { label:'Incidencias detectadas', value:totalIncidencias, trend:'▼ 2 menos que el mes pasado', trendColor:'var(--success)', dot:'var(--danger)' },
+    { label:'Gasto total (mes)', value:'€' + totalGasto, trend:'▲ 4,1% vs mes anterior', trendColor:'var(--success)', dot:'var(--accentDeep)' },
+    { label:'Incidencias detectadas', value: totalIncidencias, trend:'▼ 2 menos que el mes pasado', trendColor:'var(--success)', dot:'var(--danger)' },
     { label:'Proveedores activos', value: proveedoresData.length, trend:'sin cambios', trendColor:'var(--textSoft)', dot:'var(--success)' },
   ];
 
-  const maxGasto = Math.max(...proveedoresData.map(p => parseFloat(p.importeTotal)));
+  const maxGasto = Math.max(...proveedoresData.map(p => parseFloat(p.importeTotal) || 0), 1);
   
   const [exporting, setExporting] = useState(false);
 
@@ -183,17 +183,25 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 10px' }}>
             <div>Local</div><div>Albaranes</div><div>Gasto mes</div><div>Incidencias</div>
           </div>
-          {localesData.map((l, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', alignItems: 'center', padding: '12px 4px', borderTop: '1px solid var(--bg)', fontSize: 13.5 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 9, background: getAvatarBg(l.nombre), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>{getInitials(l.nombre)}</div>
-                {l.nombre}
+          {localesData.map((l, i) => {
+            const albsSource = allAlbaranes.length > 0 ? allAlbaranes : albaranesData;
+            const albsDelLocal = albsSource.filter(a => a.restaurante_id === l.id);
+            const numAlbs = albsDelLocal.length;
+            const gastoLocal = albsDelLocal.reduce((s, a) => s + (parseFloat(a.importe) || 0), 0).toFixed(2);
+            const incidsLocal = albsDelLocal.reduce((s, a) => s + (a.items ? a.items.filter(item => item.flag).length : 0), 0);
+
+            return (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', alignItems: 'center', padding: '12px 4px', borderTop: '1px solid var(--bg)', fontSize: 13.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 700 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 9, background: getAvatarBg(l.nombre), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>{getInitials(l.nombre)}</div>
+                  {l.nombre}
+                </div>
+                <div>{numAlbs}</div>
+                <div>€{gastoLocal}</div>
+                <div style={{ fontWeight:800, color: incidsLocal >= 6 ? 'var(--danger)' : 'var(--success)' }}>{incidsLocal}</div>
               </div>
-              <div>{l.albaranes}</div>
-              <div>€{l.gasto}</div>
-              <div style={{ fontWeight:800, color: l.incidencias>=6 ? 'var(--danger)' : 'var(--success)' }}>{l.incidencias}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

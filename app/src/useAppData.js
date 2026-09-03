@@ -10,6 +10,8 @@ export function useAppData() {
   const [ingredientesBase, setIngredientesBase] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [errorMsg, setErrorMsg] = useState(null);
+
   const crearEscandallo = async (platoData, ingredientesData) => {
     if (!supabase) return false;
     try {
@@ -80,84 +82,87 @@ export function useAppData() {
   };
 
   const fetchData = async () => {
-    if (!supabase) return;
+    if (!supabase) {
+      console.warn("Supabase client is null. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     
     try {
       // Fetch restaurantes
-    const { data: rests } = await supabase.from('restaurantes').select('*');
-    if (rests) setRestaurantes(rests);
+      const { data: rests } = await supabase.from('restaurantes').select('*');
+      if (rests) setRestaurantes(rests);
 
-    // Fetch catalog data
-    const { data: ingrData } = await supabase.from('ingredientes_base').select('id, nombre, unidad_medida, precio_estimado').order('nombre');
-    if (ingrData) setIngredientesBase(ingrData);
-    const { data: platosData } = await supabase.from('platos').select('*');
-    const { data: escandallosData } = await supabase.from('escandallos').select('*, ingredientes_base(nombre, unidad_medida, precio_estimado)');
+      // Fetch catalog data
+      const { data: ingrData } = await supabase.from('ingredientes_base').select('id, nombre, unidad_medida, precio_estimado').order('nombre');
+      if (ingrData) setIngredientesBase(ingrData);
+      const { data: platosData } = await supabase.from('platos').select('*');
+      const { data: escandallosData } = await supabase.from('escandallos').select('*, ingredientes_base(nombre, unidad_medida, precio_estimado)');
 
-    // Fetch proveedores
-    const { data: provs } = await supabase.from('proveedores').select('*');
+      // Fetch proveedores
+      const { data: provs } = await supabase.from('proveedores').select('*');
 
-    // Fetch albaranes with sus lineas y el nombre del proveedor
-    const { data: albs } = await supabase
-      .from('albaranes')
-      .select(`
-        *,
-        proveedores ( nombre ),
-        lineas_albaran ( * )
-      `)
-      .order('creado_en', { ascending: false });
-      
-    if (albs) {
-      if (provs) {
-        const provsConMetricas = provs.map(p => {
-          const albsDelProv = albs.filter(a => a.proveedor_id === p.id);
-          const totalGastado = albsDelProv.reduce((sum, a) => sum + (parseFloat(a.importe_total) || 0), 0);
-          const countIncidencias = albsDelProv.filter(a => a.estado === 'incidencia').length;
-          return {
-            id: p.id,
-            nombre: p.nombre,
-            numAlbaranes: albsDelProv.length,
-            importeTotal: totalGastado.toFixed(2),
-            incidenciasPct: albsDelProv.length ? Math.round((countIncidencias / albsDelProv.length) * 100) : 0,
-            variacionPrecio: '0', // Placeholder
-            puntualidad: '100'    // Placeholder
-          };
-        });
-        setProveedores(provsConMetricas);
-      }
-      // Formatear albaranes para que encajen con lo que esperan las vistas
-      const formattedAlbaranes = albs.map(a => ({
-        id: a.id,
-        restaurante_id: a.restaurante_id,
-        numero: a.numero,
-        proveedor: a.proveedores?.nombre || 'Desconocido',
-        tipo: a.tipo_albaran || 'Otros',
-        fecha: a.fecha ? new Date(a.fecha).toLocaleDateString('es-ES') : 'Sin fecha',
-        importe: a.importe_total || 0,
-        baseImponible: a.base_imponible || 0,
-        desgloseIva: a.desglose_iva || [],
-        estado: a.estado,
-        imagenUrl: a.imagen_url,
-        items: (a.lineas_albaran || []).map(l => ({
-          id: l.id,
-          producto: l.producto,
-          cantidad: l.cantidad,
-          precioUnit: l.precio_unitario,
-          total: l.importe_linea,
-          flag: l.flag_incidencia,
-          motivo: l.motivo_incidencia
-        }))
-      }));
-      setAlbaranes(formattedAlbaranes);
-    }
-        // 3. Procesar Platos y Escandallos (Rentabilidad Viva)
-      if (platosData && escandallosData && ingrData) {
-        // Encontrar último precio (o medio) de cada ingrediente_base
-        const preciosIngredientes = {}; // { ingrediente_id: precio_unitario }
+      // Fetch albaranes con sus líneas y el nombre del proveedor
+      const { data: albs } = await supabase
+        .from('albaranes')
+        .select(`
+          *,
+          proveedores ( nombre ),
+          lineas_albaran ( * )
+        `)
+        .order('creado_en', { ascending: false });
         
-        // Recorremos todas las líneas de todos los albaranes buscando ingredientes mapeados
-        albs.forEach(a => {
+      if (albs) {
+        if (provs) {
+          const provsConMetricas = provs.map(p => {
+            const albsDelProv = albs.filter(a => a.proveedor_id === p.id);
+            const totalGastado = albsDelProv.reduce((sum, a) => sum + (parseFloat(a.importe_total) || 0), 0);
+            const countIncidencias = albsDelProv.filter(a => a.estado === 'incidencia').length;
+            return {
+              id: p.id,
+              nombre: p.nombre,
+              numAlbaranes: albsDelProv.length,
+              importeTotal: totalGastado.toFixed(2),
+              incidenciasPct: albsDelProv.length ? Math.round((countIncidencias / albsDelProv.length) * 100) : 0,
+              variacionPrecio: '0', // Placeholder
+              puntualidad: '100'    // Placeholder
+            };
+          });
+          setProveedores(provsConMetricas);
+        }
+        // Formatear albaranes para que encajen con lo que esperan las vistas
+        const formattedAlbaranes = albs.map(a => ({
+          id: a.id,
+          restaurante_id: a.restaurante_id,
+          numero: a.numero,
+          proveedor: a.proveedores?.nombre || 'Desconocido',
+          tipo: a.tipo_albaran || 'Otros',
+          fecha: a.fecha ? new Date(a.fecha).toLocaleDateString('es-ES') : 'Sin fecha',
+          importe: a.importe_total || 0,
+          baseImponible: a.base_imponible || 0,
+          desgloseIva: a.desglose_iva || [],
+          estado: a.estado,
+          imagenUrl: a.imagen_url,
+          items: (a.lineas_albaran || []).map(l => ({
+            id: l.id,
+            producto: l.producto,
+            cantidad: l.cantidad,
+            precioUnit: l.precio_unitario,
+            total: l.importe_linea,
+            flag: l.flag_incidencia,
+            motivo: l.motivo_incidencia
+          }))
+        }));
+        setAlbaranes(formattedAlbaranes);
+      }
+
+      // 3. Procesar Platos y Escandallos (Rentabilidad Viva)
+      if (platosData && escandallosData && ingrData) {
+        const preciosIngredientes = {};
+        
+        (albs || []).forEach(a => {
           (a.lineas_albaran || []).forEach(l => {
             if (l.ingrediente_base_id && l.precio_unitario) {
               if (!preciosIngredientes[l.ingrediente_base_id]) {
@@ -171,16 +176,15 @@ export function useAppData() {
           });
         });
 
-        // Calcular estadísticas de precios (último vs anterior)
         const priceStats = {};
         for (const [id, prices] of Object.entries(preciosIngredientes)) {
-          const currentEntry = prices[0]; // El array se llenó desde los albaranes más recientes
+          const currentEntry = prices[0];
           const previousEntry = prices.length > 1 ? prices[1] : currentEntry;
           
           const current = currentEntry.precio;
           const previous = previousEntry.precio;
           const percentChange = previous > 0 ? ((current - previous) / previous) * 100 : 0;
-          const isAlert = percentChange > 5.0; // Alerta si sube más de un 5%
+          const isAlert = percentChange > 5.0;
 
           priceStats[id] = {
             current,
@@ -191,7 +195,6 @@ export function useAppData() {
           };
         }
 
-        // Ahora montamos los platos con su coste
         const platosCompletos = platosData.map(plato => {
           const receta = escandallosData.filter(e => e.plato_id === plato.id);
           
@@ -240,38 +243,55 @@ export function useAppData() {
         setPlatos(platosCompletos);
       }
       
-      // Fetch pedidos (con proveedor)
-      const { data: resPed } = await supabase
-        .from('pedidos')
-        .select(`
-          *,
-          proveedores (nombre),
-          lineas_pedido (id)
-        `)
-        .order('fecha_pedido', { ascending: false });
+      // Fetch pedidos (si existe la tabla)
+      try {
+        const { data: resPed } = await supabase
+          .from('pedidos')
+          .select(`
+            *,
+            proveedores (nombre),
+            lineas_pedido (id)
+          `)
+          .order('fecha_pedido', { ascending: false });
 
-      if (resPed) {
-        const formattedPedidos = resPed.map(p => ({
-          id: p.id,
-          restaurante_id: p.restaurante_id,
-          proveedor: p.proveedores?.nombre || 'Desconocido',
-          fecha: p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleDateString() : '',
-          estado: p.estado,
-          lineas_count: p.lineas_pedido ? p.lineas_pedido.length : 0
-        }));
-        setPedidos(formattedPedidos);
+        if (resPed) {
+          const formattedPedidos = resPed.map(p => ({
+            id: p.id,
+            restaurante_id: p.restaurante_id,
+            proveedor: p.proveedores?.nombre || 'Desconocido',
+            fecha: p.fecha_pedido ? new Date(p.fecha_pedido).toLocaleDateString() : '',
+            estado: p.estado,
+            lineas_count: p.lineas_pedido ? p.lineas_pedido.length : 0
+          }));
+          setPedidos(formattedPedidos);
+        }
+      } catch (errPed) {
+        console.warn("Tabla de pedidos no disponible aún:", errPed);
       }
-      
-      setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setErrorMsg(error.message || "No se pudo conectar con Supabase");
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Timeout de seguridad: Si tras 7 segundos sigue cargando, desbloqueamos la UI
+    const timer = setTimeout(() => {
+      setLoading(prev => {
+        if (prev) {
+          setErrorMsg("Tiempo de espera agotado (7s) al conectar con Supabase. Comprueba tu conexión a internet o los permisos de red/proxy.");
+          return false;
+        }
+        return false;
+      });
+    }, 7000);
+
     fetchData();
+
+    return () => clearTimeout(timer);
   }, []);
 
-  return { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran };
+  return { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, errorMsg, refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran };
 }

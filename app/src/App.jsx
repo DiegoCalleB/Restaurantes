@@ -19,16 +19,28 @@ import LoginView from './views/LoginView';
 import SubirCartaView from './views/SubirCartaView';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState({ username: 'EmilioGallego', role: 'admin' });
   const [view, setView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
   const [selectedPlatoId, setSelectedPlatoId] = useState(null);
-  const [selectedRestauranteId, setSelectedRestauranteId] = useState('all');
+  const [selectedRestauranteId, setSelectedRestauranteId] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [albaranesFilter, setAlbaranesFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  const { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran } = useAppData();
+  const { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, errorMsg, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran } = useAppData();
+
+  // Seleccionar Mercado Tirso por defecto cuando se carguen los restaurantes
+  React.useEffect(() => {
+    if (restaurantes && restaurantes.length > 0 && (selectedRestauranteId === 'all' || !selectedRestauranteId)) {
+      const tirso = restaurantes.find(r => r.nombre.toLowerCase().includes('tirso'));
+      if (tirso) {
+        setSelectedRestauranteId(tirso.id);
+      } else {
+        setSelectedRestauranteId(restaurantes[0].id);
+      }
+    }
+  }, [restaurantes]);
 
   const navItems = [
     { key: 'dashboard', label: 'Panel general', icon: <LayoutDashboard size={16} /> },
@@ -54,7 +66,7 @@ function App() {
   };
 
   const [title, subtitle] = titles[view] || titles.dashboard;
-  const isAdmin = selectedRestauranteId === 'all';
+  const isAdmin = true;
 
   // Filtrar los datos globales según el restaurante activo
   const activeAlbaranes = selectedRestauranteId === 'all' ? albaranes : albaranes.filter(a => a.restaurante_id === selectedRestauranteId);
@@ -165,7 +177,6 @@ function App() {
                   cursor: 'pointer', outline: 'none'
                 }}
               >
-                <option value="all">Todos los locales</option>
                 {restaurantes.map(r => (
                   <option key={r.id} value={r.id}>{r.nombre}</option>
                 ))}
@@ -191,9 +202,14 @@ function App() {
               <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
               <div>Cargando datos desde Supabase...</div>
            </div>
+        ) : errorMsg ? (
+           <div style={{ padding: 20, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderRadius: 12, border: '1px solid rgba(239, 68, 68, 0.3)', margin: '20px 0' }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>❌ Error al conectar con Supabase</div>
+              <div style={{ fontSize: 13 }}>{errorMsg}</div>
+           </div>
         ) : (
           <>
-            {view === 'dashboard' && <DashboardView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} proveedoresData={activeProveedores} localesData={restaurantes} />}
+            {view === 'dashboard' && <DashboardView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} allAlbaranes={albaranes} proveedoresData={activeProveedores} localesData={restaurantes} />}
             {view === 'pedidos' && <PedidosView pedidos={activePedidos} proveedoresData={activeProveedores} />}
             { view === 'albaranes' && <AlbaranesView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} albaranesFilter={albaranesFilter} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} eliminarAlbaran={eliminarAlbaran} /> }
             { view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} /> }
