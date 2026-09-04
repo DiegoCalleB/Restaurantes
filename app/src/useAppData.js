@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 
+const DEFAULT_RESTAURANTES = [
+  { id: '68d0128c-d047-48d4-8cbe-08fe151aa632', nombre: 'Mercado Tirso' },
+  { id: '9b5f1982-fb46-43cb-a393-387ec6f658ff', nombre: 'Becerril de la Sierra' }
+];
+
 export function useAppData() {
   const [albaranes, setAlbaranes] = useState([]);
   const [proveedores, setProveedores] = useState([]);
-  const [restaurantes, setRestaurantes] = useState([]);
+  const [restaurantes, setRestaurantes] = useState(DEFAULT_RESTAURANTES);
   const [platos, setPlatos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [ingredientesBase, setIngredientesBase] = useState([]);

@@ -23,21 +23,20 @@ function App() {
   const [view, setView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
   const [selectedPlatoId, setSelectedPlatoId] = useState(null);
-  const [selectedRestauranteId, setSelectedRestauranteId] = useState('');
+  const [selectedRestauranteId, setSelectedRestauranteId] = useState('68d0128c-d047-48d4-8cbe-08fe151aa632');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [albaranesFilter, setAlbaranesFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
   
   const { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, errorMsg, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran } = useAppData();
 
-  // Seleccionar Mercado Tirso por defecto cuando se carguen los restaurantes
+  // Asegurar que un local esté seleccionado si restaurantes cambia
   React.useEffect(() => {
-    if (restaurantes && restaurantes.length > 0 && (selectedRestauranteId === 'all' || !selectedRestauranteId)) {
-      const tirso = restaurantes.find(r => r.nombre.toLowerCase().includes('tirso'));
-      if (tirso) {
-        setSelectedRestauranteId(tirso.id);
-      } else {
-        setSelectedRestauranteId(restaurantes[0].id);
+    if (restaurantes && restaurantes.length > 0) {
+      const exists = restaurantes.some(r => r.id === selectedRestauranteId);
+      if (!exists) {
+        const tirso = restaurantes.find(r => r.nombre.toLowerCase().includes('tirso'));
+        setSelectedRestauranteId(tirso ? tirso.id : restaurantes[0].id);
       }
     }
   }, [restaurantes]);
