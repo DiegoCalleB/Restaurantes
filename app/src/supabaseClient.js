@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { findBestMatch } from './matchingService'
+import { deducirCategoriaPlato } from './utils/categoriaService'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -234,8 +235,10 @@ export async function guardarCartaExtraida(datosCarta, restauranteId) {
       if (!isNaN(numPvp)) pvpLimpio = numPvp;
     }
     
-    // Categoría genérica si no viene
-    const categoriaLimpia = platoData.categoria ? platoData.categoria : 'Otros';
+    // Categoría limpia si no viene o es genérica
+    const categoriaLimpia = (platoData.categoria && platoData.categoria !== 'Otros' && platoData.categoria !== 'Principal')
+      ? platoData.categoria
+      : deducirCategoriaPlato(platoData.nombre, platoData.ingredientes);
 
     // Insertamos plato
     const { data: platoNuevo, error: errPlato } = await supabase.from('platos')

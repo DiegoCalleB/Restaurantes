@@ -1,10 +1,35 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { deducirCategoriaPlato } from './utils/categoriaService';
+import { obtenerImagenPlato, comprimirImagen } from './utils/imagenPlatoService';
 
 const DEFAULT_RESTAURANTES = [
   { id: '68d0128c-d047-48d4-8cbe-08fe151aa632', nombre: 'Mercado Tirso' },
   { id: '9b5f1982-fb46-43cb-a393-387ec6f658ff', nombre: 'Becerril de la Sierra' }
 ];
+
+function deducirAlergenosTexto(texto) {
+  if (!texto) return [];
+  const t = texto.toLowerCase();
+  const res = new Set();
+  
+  if (/pan|harina|trigo|tosta|brioche|cerveza|croqueta|pasta|ramen|masa|galleta|hamburguesa|bravas/.test(t)) res.add('gluten');
+  if (/queso|leche|nata|mantequilla|crema|bechamel|yogur|huancaína|trufa/.test(t)) res.add('lacteos');
+  if (/huevo|mayonesa|alioli|tortilla|ensaladilla/.test(t)) res.add('huevos');
+  if (/pescado|sardina|merluza|bacalao|atun|bonito|salmon|anchoa|lubina|dorada/.test(t)) res.add('pescado');
+  if (/gamba|langostino|marisco|gambon|cangrejo|cigala/.test(t)) res.add('crustaceos');
+  if (/mejillon|almeja|pulpo|calamar|chipiron|ostra/.test(t)) res.add('moluscos');
+  if (/almendra|nuez|avellana|piñon|romesco|pistacho|anacardo/.test(t)) res.add('frutos_secos');
+  if (/cacahuete/.test(t)) res.add('cacahuetes');
+  if (/soja|hoisin|edamame|tofu|teriyaki/.test(t)) res.add('soja');
+  if (/apio/.test(t)) res.add('apio');
+  if (/mostaza/.test(t)) res.add('mostaza');
+  if (/sesamo|ajonjoli/.test(t)) res.add('sesamo');
+  if (/vino|cava|sidra|vinagre/.test(t)) res.add('sulfitos');
+  if (/altramuz/.test(t)) res.add('altramuces');
+
+  return Array.from(res);
+}
 
 export function useAppData() {
   const [albaranes, setAlbaranes] = useState([]);
@@ -261,7 +286,7 @@ export function useAppData() {
           let costeTotal = 0;
           let hasAlert = false;
           const alergenosSet = new Set();
-          
+
           const ingredientesDetalle = receta.map(e => {
             const ingBase = e.ingredientes_base || {};
             const stats = priceStats[e.ingrediente_id] || { current: ingBase.precio_estimado || 0, isAlert: false, percentChange: 0 };
@@ -271,8 +296,11 @@ export function useAppData() {
             
             if (stats.isAlert) hasAlert = true;
 
-            // Colectar alérgenos
-            const listAlerg = Array.isArray(ingBase.alergenos) ? ingBase.alergenos : (ingBase.alergenos ? JSON.parse(ingBase.alergenos) : []);
+            // Colectar alérgenos (si están en BD o deducidos por nombre)
+            let listAlerg = Array.isArray(ingBase.alergenos) ? ingBase.alergenos : (ingBase.alergenos ? JSON.parse(ingBase.alergenos) : []);
+            if (listAlerg.length === 0) {
+              listAlerg = deducirAlergenosTexto(ingBase.nombre);
+            }
             listAlerg.forEach(a => alergenosSet.add(a));
 
             return {
@@ -288,6 +316,10 @@ export function useAppData() {
             };
           });
 
+          // Deducir también alérgenos por el propio nombre del plato si no hay escandallo completo aún
+          const alergenosPorNombre = deducirAlergenosTexto(plato.nombre);
+          alergenosPorNombre.forEach(a => alergenosSet.add(a));
+
           const precioVenta = parseFloat(plato.precio_venta) || 0;
           const margenEuros = precioVenta - costeTotal;
           const margenPct = precioVenta > 0 ? (margenEuros / precioVenta) * 100 : 0;
@@ -299,9 +331,17 @@ export function useAppData() {
             id: plato.id,
             nombre: plato.nombre,
             restaurante_id: plato.restaurante_id,
-            categoria: plato.categoria || 'Otros',
+            categoria: (plato.categoria && plato.categoria !== 'Otros' && plato.categoria !== 'Principal')
+              ? plato.categoria
+              : deducirCategoriaPlato(plato.nombre, ingredientesDetalle),
             orden: plato.orden || 999,
             precioVenta: precioVenta,
+            precio_venta: precioVenta,
+            imagen_url: plato.imagen_url || obtenerImagenPlato(plato),
+            imagenUrl: plato.imagen_url || obtenerImagenPlato(plato),
+            descripcion: plato.descripcion || '',
+            tiempo_preparacion: plato.tiempo_preparacion || plato.tiempoPreparacion || 15,
+            tiempoPreparacion: plato.tiempo_preparacion || plato.tiempoPreparacion || 15,
             pvpRecomendado: pvpRecomendado,
             coste: costeTotal,
             margenEuros: margenEuros,
@@ -364,6 +404,109 @@ export function useAppData() {
     }
   };
 
+  const actualizarImagenPlato = async (platoId, fileOrUrl) => {
+    if (!supabase) return false;
+    try {
+      let finalUrl = fileOrUrl;
+
+      // Si es un File del navegador, intentar subirlo a Supabase Storage Bucket 'platos'
+      if (fileOrUrl instanceof File) {
+        const { file, dataUrl } = await comprimirImagen(fileOrUrl);
+        const fileName = `plato_${platoId}_${Date.now()}.jpg`;
+
+        try {
+          const { data: storageData, error: storageErr } = await supabase
+            .storage
+            .from('platos')
+            .upload(fileName, file, { upsert: true, contentType: 'image/jpeg' });
+
+          if (!storageErr && storageData) {
+            const { data: publicUrlData } = supabase.storage.from('platos').getPublicUrl(fileName);
+            if (publicUrlData && publicUrlData.publicUrl) {
+              finalUrl = publicUrlData.publicUrl;
+            } else {
+              finalUrl = dataUrl;
+            }
+          } else {
+            // Fallback a DataURL Base64 si el bucket de Supabase no está configurado o falla
+            finalUrl = dataUrl;
+          }
+        } catch (errSt) {
+          console.warn("Fallback a DataURL para almacenamiento de imagen:", errSt);
+          finalUrl = dataUrl;
+        }
+      }
+
+      const { error } = await supabase
+        .from('platos')
+        .update({ imagen_url: finalUrl })
+        .eq('id', platoId);
+
+      if (error) throw error;
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error actualizando imagen del plato:", e);
+      return false;
+    }
+  };
+
+  const actualizarCategoriaPlato = async (platoId, nuevaCategoria) => {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase
+        .from('platos')
+        .update({ categoria: nuevaCategoria })
+        .eq('id', platoId);
+      if (error) throw error;
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error actualizando categoría del plato:", e);
+      return false;
+    }
+  };
+
+  const actualizarEscandalloCompleto = async (platoId, datosPlato, lineasIngredientes) => {
+    if (!supabase) return false;
+    try {
+      // 1. Actualizar plato
+      const { error: errPlato } = await supabase
+        .from('platos')
+        .update({
+          nombre: datosPlato.nombre,
+          precio_venta: datosPlato.precioVenta || datosPlato.precio_venta,
+          categoria: datosPlato.categoria,
+          tiempo_preparacion: datosPlato.tiempo_preparacion || datosPlato.tiempoPreparacion || 15
+        })
+        .eq('id', platoId);
+
+      if (errPlato) throw errPlato;
+
+      // 2. Reemplazar líneas de escandallo
+      if (lineasIngredientes) {
+        await supabase.from('escandallos').delete().eq('plato_id', platoId);
+
+        const lineasInsert = lineasIngredientes.map(ing => ({
+          plato_id: platoId,
+          ingrediente_id: ing.ingrediente_id,
+          cantidad: ing.cantidad
+        }));
+
+        if (lineasInsert.length > 0) {
+          const { error: errEsc } = await supabase.from('escandallos').insert(lineasInsert);
+          if (errEsc) throw errEsc;
+        }
+      }
+
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error actualizando escandallo completo:", e);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(prev => {
@@ -382,6 +525,6 @@ export function useAppData() {
 
   return {
     albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, facturasProveedor, loading, errorMsg,
-    refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran, actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor
+    refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran, actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor, actualizarImagenPlato, actualizarCategoriaPlato, actualizarEscandalloCompleto
   };
 }

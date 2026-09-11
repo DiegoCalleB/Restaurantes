@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Upload, AlertOctagon, CheckCircle2, ShieldAlert, ArrowRight, Copy } from 'lucide-react';
+import { FileText, Upload, AlertOctagon, CheckCircle2, ShieldAlert, ArrowRight, Copy, Check } from 'lucide-react';
 import { extraerDatosFacturaMensual } from '../geminiService';
 
 export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [], guardarFacturaProveedor }) {
@@ -8,7 +8,6 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
   const [resultado, setResultado] = useState(null);
   const [copiado, setCopiado] = useState(false);
 
-  // Mock de facturas previas para demostración rica
   const listFacturas = facturasProveedor.length > 0 ? facturasProveedor : [
     {
       id: 'f1',
@@ -21,8 +20,8 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
       diferencia: 70.00,
       estado: 'incidencia',
       desgloseDiscrepancias: [
-        'Factura cobra 70.00€ adicionales por 2 entregas urgente no reflejadas en albarán A-2026-0842',
-        'Diferencia detectada en precio unitario de Harina de trigo (+17,9% sobre pactado)'
+        'Factura cobra 70.00€ adicionales por 2 entregas urgentes no reflejadas en albarán A-2026-0842.',
+        'Diferencia detectada en precio unitario de Harina de trigo (+17,9% sobre lo pactado).'
       ]
     },
     {
@@ -48,14 +47,11 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
     setResultado(null);
 
     try {
-      // 1. OCR con Gemini
       const datosExtraidos = await extraerDatosFacturaMensual(file);
       
-      // 2. Cruce automático contra albaranes en memoria
       const provNombre = datosExtraidos.proveedor || '';
       const impFactura = parseFloat(datosExtraidos.importeFactura) || 0;
 
-      // Filtrar albaranes validados de ese proveedor
       const albaranesDelProv = albaranes.filter(a => 
         a.proveedor.toLowerCase().includes(provNombre.toLowerCase()) || 
         provNombre.toLowerCase().includes(a.proveedor.toLowerCase())
@@ -63,7 +59,6 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
 
       const sumaAlbs = albaranesDelProv.reduce((sum, a) => sum + (parseFloat(a.importe) || 0), 0);
       const diff = Math.round((impFactura - sumaAlbs) * 100) / 100;
-
       const tieneDescuadre = Math.abs(diff) > 0.50;
 
       const nuevaFactura = {
@@ -76,8 +71,8 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
         diferencia: diff,
         estado: tieneDescuadre ? 'incidencia' : 'conciliada',
         desgloseDiscrepancias: tieneDescuadre ? [
-          `La factura global de ${datosExtraidos.proveedor} (${impFactura.toFixed(2)}€) no coincide con la suma de los albaranes validados (${sumaAlbs.toFixed(2)}€).`,
-          `Diferencia no justificada a reclamar: ${diff.toFixed(2)}€.`
+          `La factura global de ${datosExtraidos.proveedor} (${impFactura.toFixed(2)}€) no coincide con la suma de albaranes validados (${sumaAlbs.toFixed(2)}€).`,
+          `Diferencia a reclamar: ${diff.toFixed(2)}€.`
         ] : []
       };
 
@@ -88,7 +83,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
       setResultado(nuevaFactura);
     } catch (err) {
       console.error("Error en conciliación OCR:", err);
-      // Fallback de demostración fluida si no hay key de API activa
+      // Demo fluida en caso de error
       const demoFactura = {
         proveedor: 'Distribuciones Ibérica S.L.',
         numeroFactura: 'FAC-2026-0912',
@@ -99,8 +94,8 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
         diferencia: 120.00,
         estado: 'incidencia',
         desgloseDiscrepancias: [
-          'Factura global incluye 120,00€ por suplementos de transporte no reflejados en albaranes validados.',
-          'Reclamación sugerida enviada al departamento de administración.'
+          'Factura global incluye 120,00€ por portes urgentes no reflejados en los albaranes firmados.',
+          'Reclamación sugerida para el departamento de administración del proveedor.'
         ]
       };
       setResultado(demoFactura);
@@ -119,47 +114,35 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
 
   return (
     <div className="view-container">
-      {/* Header */}
-      <div className="flex-between mb-24">
-        <div>
-          <h1 className="title-lg">Conciliador "Caza-Trampas" de Facturas Mensuales</h1>
-          <p className="subtitle">
-            Cruza las facturas globales de fin de mes contra los albaranes reales validados en cocina y detecta sobrecostes al instante.
-          </p>
-        </div>
-        <div className="badge-pill bg-danger-soft text-danger flex-center gap-8">
-          <ShieldAlert size={16} />
-          <span>Auditoría Financiera Activa</span>
-        </div>
-      </div>
-
-      {/* Zona de Subida */}
-      <div className="card p-32 text-center mb-32 border-dashed border-2 cursor-pointer hover-accent">
+      {/* Dropzone elegante */}
+      <div className="card p-32 text-center mb-32 border-dashed border-2 hover-accent cursor-pointer">
         <input
           type="file"
           accept="image/*,application/pdf"
           onChange={handleFileUpload}
-          className="hidden"
-          id="factura-upload"
+          style={{ display: 'none' }}
+          id="factura-upload-input"
           disabled={uploading}
         />
-        <label htmlFor="factura-upload" className="cursor-pointer block">
-          <Upload className="mx-auto mb-12 text-accent" size={44} />
-          <h3 className="font-bold text-lg mb-4">Sube o arrastra la Factura Mensual del Proveedor (PDF o Foto)</h3>
-          <p className="text-muted text-sm">
-            Gemini OCR leerá el importe y lo cruzará en 3 segundos contra todos los albaranes escaneados del mes.
+        <label htmlFor="factura-upload-input" className="cursor-pointer block">
+          <div className="w-60 h-60 rounded-16 bg-accent-soft mx-auto mb-16 flex-center text-accent">
+            <Upload size={32} />
+          </div>
+          <h3 className="font-extrabold text-lg mb-4 text-primary">Sube o arrastra la Factura Mensual del Proveedor</h3>
+          <p className="text-muted text-sm max-w-md mx-auto">
+            Formatos PDF o Imagen. Gemini OCR cruzará los totales contra tus albaranes validados en 3 segundos.
           </p>
         </label>
 
         {analizando && (
           <div className="mt-20 flex-center gap-10 text-accent font-bold">
             <div className="spinner"></div>
-            <span>Analizando factura y cruzando albaranes...</span>
+            <span>Auditando factura y verificando albaranes...</span>
           </div>
         )}
       </div>
 
-      {/* Resultado de la Auditoría Reciente si acaba de subir */}
+      {/* Tarjeta de Resultado de Auditoría */}
       {resultado && (
         <div className={`card p-24 mb-32 border-2 ${resultado.estado === 'incidencia' ? 'border-danger bg-danger-soft' : 'border-success bg-success-soft'}`}>
           <div className="flex-between mb-16">
@@ -168,20 +151,20 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
               {resultado.proveedor} — {resultado.numeroFactura} ({resultado.periodoMes})
             </span>
             <span className={`badge ${resultado.estado === 'incidencia' ? 'badge-danger' : 'badge-success'} text-md font-bold`}>
-              {resultado.estado === 'incidencia' ? `⚠️ Discrepancia: +${resultado.diferencia.toFixed(2)}€` : '✓ Conciliación Perfecta'}
+              {resultado.estado === 'incidencia' ? `⚠️ Sobrecoste: +${resultado.diferencia.toFixed(2)}€` : '✓ Conciliada OK'}
             </span>
           </div>
 
           <div className="grid-3 gap-16 mb-20">
-            <div className="bg-surface p-14 rounded-10 shadow-xs">
+            <div className="bg-surface p-16 rounded-10 shadow-xs">
               <span className="text-xs text-muted block font-semibold uppercase">Importe Factura Global</span>
               <span className="font-black text-xl text-primary">{resultado.importeFactura.toFixed(2)}€</span>
             </div>
-            <div className="bg-surface p-14 rounded-10 shadow-xs">
+            <div className="bg-surface p-16 rounded-10 shadow-xs">
               <span className="text-xs text-muted block font-semibold uppercase">Suma Albaranes Validados</span>
               <span className="font-black text-xl text-success">{resultado.sumaAlbaranes.toFixed(2)}€</span>
             </div>
-            <div className="bg-surface p-14 rounded-10 shadow-xs">
+            <div className="bg-surface p-16 rounded-10 shadow-xs">
               <span className="text-xs text-muted block font-semibold uppercase">Sobrecoste Detectado</span>
               <span className={`font-black text-xl ${resultado.diferencia > 0 ? 'text-danger' : 'text-primary'}`}>
                 {resultado.diferencia > 0 ? `+${resultado.diferencia.toFixed(2)}€` : '0.00€'}
@@ -190,8 +173,8 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
           </div>
 
           {resultado.desgloseDiscrepancias.length > 0 && (
-            <div className="bg-surface p-16 rounded-10 mb-16">
-              <h4 className="font-bold text-sm text-danger mb-8">Motivo del descuadre detectado por la IA:</h4>
+            <div className="bg-surface p-16 rounded-10 mb-16 border-l-4 border-danger">
+              <h4 className="font-bold text-sm text-danger mb-8">Discrepancias detectadas por la IA:</h4>
               <ul className="list-disc pl-20 space-y-4 text-sm text-primary font-medium">
                 {resultado.desgloseDiscrepancias.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -205,20 +188,23 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
               onClick={() => copiarReclamacion(resultado)}
               className="btn btn-primary flex-center gap-8 font-bold"
             >
-              <Copy size={16} />
-              <span>{copiado ? '¡Texto de Reclamación Copiado!' : 'Copiar Texto de Reclamación para Email'}</span>
+              {copiado ? <Check size={16} /> : <Copy size={16} />}
+              <span>{copiado ? '¡Texto de Reclamación Copiado!' : 'Copiar Email de Reclamación'}</span>
             </button>
           )}
         </div>
       )}
 
       {/* Histórico de Facturas Conciliadas */}
-      <h2 className="title-md mb-16 flex-center-start gap-8">
-        <FileText className="text-accent" size={20} />
-        <span>Histórico de Facturas Auditeadas</span>
-      </h2>
-
       <div className="card overflow-hidden">
+        <div className="p-16 bg-surface border-b flex-between">
+          <h2 className="title-md flex-center gap-8">
+            <FileText className="text-accent" size={20} />
+            <span>Histórico de Facturas Auditeadas</span>
+          </h2>
+          <span className="badge badge-accent font-bold">{listFacturas.length} Facturas Registradas</span>
+        </div>
+
         <table className="table-custom">
           <thead>
             <tr>
@@ -258,7 +244,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
                         Reclamar <ArrowRight size={14} />
                       </button>
                     ) : (
-                      <span className="text-xs text-muted">OK</span>
+                      <span className="badge badge-neutral text-xs">OK</span>
                     )}
                   </td>
                 </tr>

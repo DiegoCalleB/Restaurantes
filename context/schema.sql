@@ -202,16 +202,41 @@ ALTER TABLE rrpp_memoria ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rrpp_ordenes_busqueda ENABLE ROW LEVEL SECURITY;
 ALTER TABLE facturas_proveedor ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Permitir todo a anonimos en restaurantes" ON restaurantes;
 CREATE POLICY "Permitir todo a anonimos en restaurantes" ON restaurantes FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en proveedores" ON proveedores;
 CREATE POLICY "Permitir todo a anonimos en proveedores" ON proveedores FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en ingredientes_base" ON ingredientes_base;
 CREATE POLICY "Permitir todo a anonimos en ingredientes_base" ON ingredientes_base FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en platos" ON platos;
 CREATE POLICY "Permitir todo a anonimos en platos" ON platos FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en escandallos" ON escandallos;
 CREATE POLICY "Permitir todo a anonimos en escandallos" ON escandallos FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en albaranes" ON albaranes;
 CREATE POLICY "Permitir todo a anonimos en albaranes" ON albaranes FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en lineas_albaran" ON lineas_albaran;
 CREATE POLICY "Permitir todo a anonimos en lineas_albaran" ON lineas_albaran FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en pedidos" ON pedidos;
 CREATE POLICY "Permitir todo a anonimos en pedidos" ON pedidos FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en lineas_pedido" ON lineas_pedido;
 CREATE POLICY "Permitir todo a anonimos en lineas_pedido" ON lineas_pedido FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en facturas_proveedor" ON facturas_proveedor;
 CREATE POLICY "Permitir todo a anonimos en facturas_proveedor" ON facturas_proveedor FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en rrpp_medios" ON rrpp_medios;
 CREATE POLICY "Permitir todo a anonimos en rrpp_medios" ON rrpp_medios FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en rrpp_memoria" ON rrpp_memoria;
 CREATE POLICY "Permitir todo a anonimos en rrpp_memoria" ON rrpp_memoria FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "Permitir todo a anonimos en rrpp_ordenes_busqueda" ON rrpp_ordenes_busqueda;
 CREATE POLICY "Permitir todo a anonimos en rrpp_ordenes_busqueda" ON rrpp_ordenes_busqueda FOR ALL USING (true);

@@ -529,3 +529,87 @@ Devuelve ÚNICAMENTE un array JSON válido sin formato markdown ni texto adicion
     throw error;
   }
 }
+
+export async function parsearRecetaConIA(textoReceta, catalogoIngredientes = []) {
+  if (!ai) {
+    throw new Error('API Key de Gemini no encontrada.');
+  }
+
+  const nombresCatalogo = catalogoIngredientes.map(i => i.nombre).join(', ');
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      nombrePlato: {
+        type: Type.STRING,
+        description: "Nombre del plato o receta"
+      },
+      tiempoPreparacionMinutos: {
+        type: Type.NUMBER,
+        description: "Tiempo estimado de preparación y cocina en minutos (ej: 15, 20, 30)"
+      },
+      categoriaSugerida: {
+        type: Type.STRING,
+        description: "Categoría de carta (ej: 'Entrantes & Raciones', 'Carnes & Parrilla', 'Pescados & Mariscos', 'Pastas & Arroces', 'Postres Caseros', 'Bebidas & Bodega')"
+      },
+      ingredientes: {
+        type: Type.ARRAY,
+        description: "Lista de ingredientes parseados de la receta",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            nombreIngrediente: {
+              type: Type.STRING,
+              description: "Nombre del ingrediente parseado de la receta"
+            },
+            nombreCatalogoEmparejado: {
+              type: Type.STRING,
+              description: `Intenta emparejar este ingrediente con uno de los existentes en nuestro catálogo maestro: [${nombresCatalogo}]. Si no existe coincidencia exacta, pon el nombre parseado.`
+            },
+            cantidad: {
+              type: Type.NUMBER,
+              description: "Cantidad numérica para una ración estándar (ej: 0.200 para 200 gramos en kg, 1 para unidades, 0.15 para litros)"
+            },
+            unidadMedida: {
+              type: Type.STRING,
+              description: "Unidad de medida: 'kg', 'g', 'l', 'ml', 'unidades'"
+            }
+          },
+          required: ["nombreIngrediente", "cantidad", "unidadMedida"]
+        }
+      }
+    },
+    required: ["nombrePlato", "tiempoPreparacionMinutos", "ingredientes"]
+  };
+
+  const promptText = `
+Eres un Chef Director de Cocina experto en escandallos y estandarización de recetas.
+Analiza la siguiente receta o descripción en lenguaje natural y extrae sus ingredientes, gramajes/cantidades por ración y el tiempo estimado de preparación en minutos.
+
+TEXTO DE LA RECETA A PARSEAR:
+"""
+${textoReceta}
+"""
+
+CATÁLOGO MAESTRO DE INGREDIENTES DISPONIBLES EN EL RESTAURANTE:
+[${nombresCatalogo}]
+
+Instrucciones:
+1. Normaliza las cantidades para 1 RACIÓN INDIVIDUAL estándar de restaurante.
+2. Si las cantidades vienen en gramos (ej: 200g), conviértelas a kg (0.2) o especifica unidad 'g'/'kg' según convenga.
+3. Devuelve ÚNICAMENTE un JSON válido que cumpla estrictamente con el esquema.
+`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.5-flash-lite',
+    contents: [{ role: 'user', parts: [{ text: promptText }] }],
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: schema,
+      temperature: 0.1
+    }
+  });
+
+  let rawText = response.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+  return JSON.parse(rawText);
+}

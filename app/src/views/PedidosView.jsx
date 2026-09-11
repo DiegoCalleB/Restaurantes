@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Send, AlertTriangle, CheckCircle, Package, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Send, AlertTriangle, CheckCircle, Package, RefreshCw, Check } from 'lucide-react';
 
 export function PedidosView({ ingredientesBase = [], proveedores = [], actualizarStockIngrediente }) {
   const [editingId, setEditingId] = useState(null);
@@ -7,7 +7,6 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
   const [tempMin, setTempMin] = useState('');
   const [mensajeEnviado, setMensajeEnviado] = useState(null);
 
-  // Mock de ingredientes si viene vacío de Supabase para demostración fluida
   const catalog = ingredientesBase.length > 0 ? ingredientesBase : [
     { id: '1', nombre: 'Solomillo de Ternera', unidad_medida: 'kg', precio_estimado: 24.90, stock_actual: 3.5, stock_minimo: 10.0, proveedor: 'Distribuciones Ibérica S.L.' },
     { id: '2', nombre: 'Aceite de Oliva Virgen Extra 5L', unidad_medida: 'unidades', precio_estimado: 19.50, stock_actual: 2.0, stock_minimo: 6.0, proveedor: 'Distribuciones Ibérica S.L.' },
@@ -16,10 +15,8 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
     { id: '5', nombre: 'Merluza Fresca', unidad_medida: 'kg', precio_estimado: 20.45, stock_actual: 8.0, stock_minimo: 8.0, proveedor: 'Pescados La Rada' }
   ];
 
-  // Identificar faltas (stock_actual < stock_minimo)
   const faltas = catalog.filter(item => (item.stock_actual || 0) < (item.stock_minimo || 0));
 
-  // Agrupar faltas por proveedor
   const pedidosPorProveedor = faltas.reduce((acc, item) => {
     const provNombre = item.proveedor || 'Distribuciones Ibérica S.L.';
     if (!acc[provNombre]) acc[provNombre] = [];
@@ -56,62 +53,51 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
 
   return (
     <div className="view-container">
-      {/* Header */}
-      <div className="flex-between mb-24">
-        <div>
-          <h1 className="title-lg">Pedidos Sugeridos 1-Click</h1>
-          <p className="subtitle">
-            Cálculo automático de faltas por Par Stock (Stock Mínimo) y pedido directo por WhatsApp
-          </p>
-        </div>
-        <div className="badge-pill bg-accent-soft text-accent flex-center gap-8">
-          <ShoppingCart size={16} />
-          <span>{faltas.length} ingredientes bajo mínimo</span>
-        </div>
-      </div>
-
       {mensajeEnviado && (
         <div className="banner banner-success mb-20 flex-center gap-10">
           <CheckCircle size={18} />
-          <span>{mensajeEnviado}</span>
+          <span className="font-bold">{mensajeEnviado}</span>
         </div>
       )}
 
       {/* Grid: Pedidos Sugeridos por Proveedor */}
-      <h2 className="title-md mb-16 flex-center-start gap-8">
-        <Send className="text-accent" size={20} />
-        <span>Pedidos Sugeridos Generados ({Object.keys(pedidosPorProveedor).length} Proveedores)</span>
-      </h2>
+      <div className="flex-between mb-16">
+        <h2 className="title-md flex-center gap-8">
+          <Send className="text-accent" size={20} />
+          <span>Pedidos Sugeridos por Proveedor ({Object.keys(pedidosPorProveedor).length})</span>
+        </h2>
+        <span className="badge badge-accent font-bold">{faltas.length} Ingredientes bajo mínimo</span>
+      </div>
 
       {Object.keys(pedidosPorProveedor).length === 0 ? (
-        <div className="card p-32 text-center mb-28">
+        <div className="card p-32 text-center mb-32">
           <CheckCircle className="text-success mx-auto mb-12" size={40} />
           <h3 className="font-bold text-lg mb-4">¡Todo el stock está cubierto!</h3>
-          <p className="text-muted">Ningún ingrediente ha bajado de su stock mínimo configurado.</p>
+          <p className="text-muted text-sm">Ningún ingrediente ha bajado de su stock mínimo configurado.</p>
         </div>
       ) : (
         <div className="grid-2 gap-16 mb-32">
           {Object.entries(pedidosPorProveedor).map(([provNombre, items]) => {
             const totalEstimado = items.reduce((sum, i) => sum + (i.cantidadSugerida * (i.precio_estimado || 0)), 0);
             return (
-              <div key={provNombre} className="card p-20 flex-column justify-between shadow-sm border-accent-left">
+              <div key={provNombre} className="card p-20 flex-column justify-between border-accent-left">
                 <div>
                   <div className="flex-between mb-12">
-                    <span className="font-bold text-md flex-center gap-8">
+                    <span className="font-bold text-md flex-center gap-8 text-primary">
                       <Package size={18} className="text-accent" />
                       {provNombre}
                     </span>
-                    <span className="badge badge-warning font-semibold">Estado: Borrador</span>
+                    <span className="badge badge-warning">Borrador</span>
                   </div>
 
                   <div className="divider mb-12"></div>
 
                   <div className="space-y-8 mb-16">
                     {items.map((it, idx) => (
-                      <div key={idx} className="flex-between text-sm py-4 border-b-subtle">
+                      <div key={idx} className="flex-between text-sm py-6 border-b-subtle">
                         <div>
-                          <span className="font-medium">{it.nombre}</span>
-                          <span className="text-xs text-muted block">Stock: {it.stock_actual} / Mínimo: {it.stock_minimo} {it.unidad_medida}</span>
+                          <span className="font-semibold text-primary">{it.nombre}</span>
+                          <span className="text-xs text-muted block">Stock actual: {it.stock_actual} / Mínimo: {it.stock_minimo} {it.unidad_medida}</span>
                         </div>
                         <div className="text-right">
                           <span className="font-bold text-accent">+{it.cantidadSugerida} {it.unidad_medida}</span>
@@ -124,8 +110,8 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
 
                 <div>
                   <div className="flex-between text-sm mb-14 font-semibold">
-                    <span>Importe Estimado:</span>
-                    <span className="text-md font-extrabold">≈ {totalEstimado.toFixed(2)}€</span>
+                    <span className="text-muted">Importe Estimado:</span>
+                    <span className="text-lg font-black text-primary">≈ {totalEstimado.toFixed(2)}€</span>
                   </div>
 
                   <button
@@ -143,12 +129,15 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
       )}
 
       {/* Tabla de Gestión Par Stock */}
-      <h2 className="title-md mb-16 flex-center-start gap-8">
-        <RefreshCw className="text-accent" size={20} />
-        <span>Control de Par Stock por Ingrediente</span>
-      </h2>
-
       <div className="card overflow-hidden">
+        <div className="p-16 bg-surface border-b flex-between">
+          <h2 className="title-md flex-center gap-8">
+            <RefreshCw className="text-accent" size={20} />
+            <span>Control de Par Stock por Ingrediente</span>
+          </h2>
+          <span className="text-xs text-muted font-semibold">{catalog.length} Artículos en Catálogo</span>
+        </div>
+
         <table className="table-custom">
           <thead>
             <tr>
@@ -167,7 +156,7 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
 
               return (
                 <tr key={item.id} className={esBajoMinimo ? 'bg-danger-soft' : ''}>
-                  <td className="font-semibold">{item.nombre}</td>
+                  <td className="font-bold">{item.nombre}</td>
                   <td className="text-muted">{item.unidad_medida}</td>
 
                   <td>

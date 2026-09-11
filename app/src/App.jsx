@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, FileText, UploadCloud, Users, ChevronRight, Loader2, Bot, Package, Menu, X, ChefHat, LogOut, Megaphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, FileText, UploadCloud, Users, ChevronRight, ChevronDown, Loader2, Bot, Package, Menu, X, ChefHat, LogOut, Megaphone, QrCode, Smartphone, Share2 } from 'lucide-react';
 import './index.css';
 import { useAppData } from './useAppData';
+
+const InstagramIcon = ({ size = 16, style = {} }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
 
 // Vistas que vamos a implementar
 import DashboardView from './views/DashboardView';
@@ -20,6 +28,9 @@ import SimuladorMenuView from './views/SimuladorMenuView';
 import { PedidosView } from './views/PedidosView';
 import { FacturasConciliacionView } from './views/FacturasConciliacionView';
 import { AlergenosView } from './views/AlergenosView';
+import CartaPublicaView from './views/CartaPublicaView';
+import CartaQRView from './views/CartaQRView';
+import MarketingSocialView from './views/MarketingSocialView';
 
 function App() {
   const [currentUser, setCurrentUser] = useState({ username: 'EmilioGallego', role: 'admin' });
@@ -30,12 +41,33 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [albaranesFilter, setAlbaranesFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  const toggleSection = (sectionTitle) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionTitle]: !prev[sectionTitle]
+    }));
+  };
   
   const {
     albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, facturasProveedor,
     loading, errorMsg, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran,
-    actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor
+    actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor, actualizarImagenPlato, actualizarCategoriaPlato, actualizarEscandalloCompleto
   } = useAppData();
+
+  // Detectar entrada directa a la carta pública desde URL (QR)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const restIdParam = params.get('restaurante_id');
+    if (viewParam === 'carta_publica') {
+      setView('carta_publica');
+    }
+    if (restIdParam) {
+      setSelectedRestauranteId(restIdParam);
+    }
+  }, []);
 
   // Asegurar que un local esté seleccionado si restaurantes cambia
   React.useEffect(() => {
@@ -48,18 +80,41 @@ function App() {
     }
   }, [restaurantes]);
 
-  const navItems = [
-    { key: 'dashboard', label: 'Panel general', icon: <LayoutDashboard size={16} /> },
-    { key: 'pedidos', label: 'Pedidos 1-Click', icon: <Package size={16} /> },
-    { key: 'facturas_conciliacion', label: 'Caza-Trampas Facturas', icon: <FileText size={16} /> },
-    { key: 'alergenos', label: 'Carta Alérgenos', icon: <ChefHat size={16} /> },
-    { key: 'albaranes', label: 'Albaranes', icon: <FileText size={16} /> },
-    { key: 'subir', label: 'Subir albarán', icon: <UploadCloud size={16} /> },
-    { key: 'proveedores', label: 'Proveedores', icon: <Users size={16} /> },
-    { key: 'platos', label: 'Escandallos', icon: <FileText size={16} /> },
-    { key: 'simulador_menu', label: 'Simulador Menú', icon: <ChefHat size={16} /> },
-    { key: 'promocion', label: 'Promoción', icon: <Megaphone size={16} /> },
-    { key: 'chefbot_widget', label: 'ChefBot (IA)', icon: <Bot size={16} /> },
+  const navGroups = [
+    {
+      section: 'INFORMES',
+      items: [
+        { key: 'dashboard', label: 'Panel general', icon: <LayoutDashboard size={16} /> }
+      ]
+    },
+    {
+      section: 'COMPRAS & FACTURAS',
+      items: [
+        { key: 'albaranes', label: 'Albaranes', icon: <FileText size={16} /> },
+        { key: 'subir', label: 'Subir albarán', icon: <UploadCloud size={16} /> },
+        { key: 'pedidos', label: 'Pedidos 1-Click', icon: <Package size={16} /> },
+        { key: 'facturas_conciliacion', label: 'Caza-Trampas Facturas', icon: <FileText size={16} /> },
+        { key: 'proveedores', label: 'Proveedores', icon: <Users size={16} /> },
+      ]
+    },
+    {
+      section: 'COCINA & MENÚ',
+      items: [
+        { key: 'platos', label: 'Escandallos', icon: <ChefHat size={16} /> },
+        { key: 'simulador_menu', label: 'Simulador Menú', icon: <ChefHat size={16} /> },
+        { key: 'alergenos', label: 'Carta Alérgenos', icon: <ChefHat size={16} /> },
+      ]
+    },
+    {
+      section: 'MARKETING & REDES',
+      items: [
+        { key: 'marketing_social', label: 'Studio Instagram (IA)', icon: <InstagramIcon size={16} /> },
+        { key: 'carta_qr', label: 'Carta QR & Peanas Mesa', icon: <QrCode size={16} /> },
+        { key: 'carta_publica', label: 'Ver Carta Online Pública', icon: <Smartphone size={16} /> },
+        { key: 'promocion', label: 'Promoción RRPP', icon: <Megaphone size={16} /> },
+        { key: 'chefbot_widget', label: 'ChefBot (IA)', icon: <Bot size={16} /> },
+      ]
+    }
   ];
 
   const titles = {
@@ -75,6 +130,9 @@ function App() {
     simulador_menu: ['Simulador de Menú del Día', 'Calcula la rentabilidad real de los combos de menú'],
     receta: ['Detalle del Escandallo', 'Desglose de costes de materia prima'],
     promocion: ['Promoción y Medios', 'Contacta con prensa y TV sin agencias'],
+    marketing_social: ['Studio de Marketing & Instagram (IA)', 'Redacción de posts, scripts de reels y promociones virales con Gemini'],
+    carta_qr: ['Generador de Código QR & Peanas de Mesa', 'Crea, personaliza e imprime el QR de tu carta digital'],
+    carta_publica: ['Vista Previa Carta Online', 'Así visualizarán la carta los comensales desde sus teléfonos'],
   };
 
   const [title, subtitle] = titles[view] || titles.dashboard;
@@ -121,35 +179,61 @@ function App() {
           </div>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {navItems.map(n => {
-            const active = n.key === (view === 'detalle' ? 'albaranes' : view);
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {navGroups.map((group, idx) => {
+            const isCollapsed = !!collapsedSections[group.section];
             return (
-              <div 
-                key={n.key}
-                onClick={() => {
-                  if (n.key === 'chefbot_widget') {
-                    setIsChatOpen(true);
-                  } else {
-                    setView(n.key);
-                  }
-                  setIsMobileMenuOpen(false);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', 
-                  borderRadius: 11, cursor: 'pointer', 
-                  background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  color: active ? '#fff' : 'var(--sidebarSoft)',
-                  fontSize: 14, fontWeight: active ? 700 : 500
-                }}
-              >
-                <div style={{
-                  color: active ? 'var(--accentLight)' : 'rgba(255,255,255,0.25)',
-                  display: 'flex', alignItems: 'center'
-                }}>
-                  {n.icon}
+              <div key={idx}>
+                <div 
+                  onClick={() => toggleSection(group.section)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: 10, fontWeight: 800, color: 'var(--sidebarSoft)',
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                    padding: '6px 14px 4px', cursor: 'pointer', opacity: 0.85,
+                    userSelect: 'none'
+                  }}
+                >
+                  <span>{group.section}</span>
+                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                 </div>
-                <span>{n.label}</span>
+
+                {!isCollapsed && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                    {group.items.map(n => {
+                      const active = n.key === (view === 'detalle' ? 'albaranes' : view);
+                      return (
+                        <div 
+                          key={n.key}
+                          onClick={() => {
+                            if (n.key === 'chefbot_widget') {
+                              setIsChatOpen(true);
+                            } else {
+                              setView(n.key);
+                            }
+                            setIsMobileMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', 
+                            borderRadius: 10, cursor: 'pointer', 
+                            background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                            color: active ? '#fff' : 'var(--sidebarSoft)',
+                            fontSize: 13.5, fontWeight: active ? 700 : 500,
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{
+                            color: active ? 'var(--accentLight)' : 'rgba(255,255,255,0.3)',
+                            display: 'flex', alignItems: 'center'
+                          }}>
+                            {n.icon}
+                          </div>
+                          <span>{n.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -229,12 +313,15 @@ function App() {
             {view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} />}
             {view === 'proveedores' && <ProveedoresView isAdmin={isAdmin} proveedoresData={activeProveedores} />}
             {view === 'subir' && <SubirView setView={setView} setSelectedId={setSelectedId} onUploadComplete={refreshData} />}
-            {view === 'platos' && <PlatosView platos={activePlatos} setView={setView} setSelectedPlatoId={setSelectedPlatoId} eliminarPlato={eliminarPlato} actualizarPvpPlato={actualizarPvpPlato} />}
-            {view === 'receta' && <RecetaView selectedPlatoId={selectedPlatoId} setView={setView} setSelectedId={setSelectedId} platos={activePlatos} eliminarPlato={eliminarPlato} />}
+            {view === 'platos' && <PlatosView platos={activePlatos} setView={setView} setSelectedPlatoId={setSelectedPlatoId} eliminarPlato={eliminarPlato} actualizarPvpPlato={actualizarPvpPlato} actualizarImagenPlato={actualizarImagenPlato} actualizarCategoriaPlato={actualizarCategoriaPlato} ingredientesBase={ingredientesBase} actualizarEscandalloCompleto={actualizarEscandalloCompleto} />}
+            {view === 'receta' && <RecetaView selectedPlatoId={selectedPlatoId} setView={setView} setSelectedId={setSelectedId} platos={activePlatos} eliminarPlato={eliminarPlato} actualizarImagenPlato={actualizarImagenPlato} actualizarCategoriaPlato={actualizarCategoriaPlato} ingredientesBase={ingredientesBase} actualizarEscandalloCompleto={actualizarEscandalloCompleto} />}
             {view === 'nuevo_escandallo' && <NuevoEscandalloView setView={setView} ingredientesBase={ingredientesBase} crearEscandallo={crearEscandallo} />}
             {view === 'subir_carta' && <SubirCartaView setView={setView} selectedRestauranteId={selectedRestauranteId} onUploadComplete={refreshData} />}
             {view === 'simulador_menu' && <SimuladorMenuView platos={activePlatos} />}
             {view === 'promocion' && <PromocionView />}
+            {view === 'marketing_social' && <MarketingSocialView platos={activePlatos} restaurantes={restaurantes} selectedRestauranteId={selectedRestauranteId} />}
+            {view === 'carta_qr' && <CartaQRView restaurantes={restaurantes} selectedRestauranteId={selectedRestauranteId} onVerCartaPublica={() => setView('carta_publica')} />}
+            {view === 'carta_publica' && <CartaPublicaView restaurantes={restaurantes} platos={activePlatos} selectedRestauranteId={selectedRestauranteId} onVolverAlPanel={() => setView('dashboard')} />}
           </>
         )}
       </main>
