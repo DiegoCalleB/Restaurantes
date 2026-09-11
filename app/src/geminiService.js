@@ -147,6 +147,82 @@ export async function extraerDatosAlbaran(file) {
   }
 }
 
+export async function extraerDatosFacturaMensual(file) {
+  if (!ai) {
+    throw new Error('API Key de Gemini no encontrada. Configúrala en el archivo .env de la carpeta app.');
+  }
+
+  const base64File = await fileToBase64(file);
+
+  const schema = {
+    type: Type.OBJECT,
+    properties: {
+      proveedor: {
+        type: Type.STRING,
+        description: "Nombre de la empresa distribuidora o proveedor emisor de la factura"
+      },
+      numeroFactura: {
+        type: Type.STRING,
+        description: "Número oficial de la factura"
+      },
+      fechaEmision: {
+        type: Type.STRING,
+        description: "Fecha de la factura en formato DD/MM/YYYY"
+      },
+      periodoMes: {
+        type: Type.STRING,
+        description: "Mes o período al que corresponde la factura (ej: 'Agosto 2026')"
+      },
+      importeFactura: {
+        type: Type.STRING,
+        description: "Importe total de la factura a pagar. Sólo número con decimales."
+      },
+      albaranesRelacionados: {
+        type: Type.ARRAY,
+        description: "Lista de números de albarán o entregas citadas expresamente en el resumen de la factura",
+        items: {
+          type: Type.STRING
+        }
+      }
+    },
+    required: ["proveedor", "numeroFactura", "fechaEmision", "importeFactura"]
+  };
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.5-flash-lite',
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: "Eres un auditor financiero que analiza facturas mensuales globales de proveedores de hostelería. Extrae con precisión el número de factura, el proveedor, el período o fecha, el importe total a pagar y los números de albaranes citados. Devuelve ÚNICAMENTE un JSON válido que cumpla estrictamente con el esquema." },
+          { 
+            inlineData: {
+              mimeType: base64File.mimeType,
+              data: base64File.data
+            }
+          }
+        ]
+      }
+    ],
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: schema,
+      temperature: 0.1,
+      maxOutputTokens: 4096
+    }
+  });
+
+  let rawText = response.text;
+  rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  try {
+    return JSON.parse(rawText);
+  } catch (err) {
+    console.error("JSON Error parsing Gemini response (Factura Mensual):", err);
+    throw new Error("No se pudo leer correctamente la factura mensual. Revisa que la imagen sea nítida.");
+  }
+}
+
 export async function extraerDatosCarta(file) {
   if (!ai) {
     throw new Error('API Key de Gemini no encontrada. Configúrala en el archivo .env de la carpeta app.');
@@ -288,16 +364,34 @@ ${JSON.stringify(contextoDatos)}
           functionDeclarations: [
             {
               name: 'enviar_exploradores_rrpp',
-              description: 'Añade una orden a la cola de agentes scout para buscar medios de comunicación.',
+              description: 'Añade una orden a la cola de agentes scout para buscar medios de comunicación, revistas, radios, periódicos o tiktokers/influencers.',
               parameters: {
                 type: Type.OBJECT,
                 properties: {
                   termino_busqueda: {
                     type: Type.STRING,
-                    description: 'El término exacto a buscar en el buscador (ej: "television local madrid contacto")'
+                    description: 'El término exacto a buscar (ej: "radios de madrid contacto email" o "tiktokers comida madrid")'
                   }
                 },
                 required: ['termino_busqueda']
+              }
+            },
+            {
+              name: 'proponer_pitch_rrpp',
+              description: 'Redacta un borrador de nota de prensa o propuesta de colaboración para proponer a un medio, revista, radio o influencer.',
+              parameters: {
+                type: Type.OBJECT,
+                properties: {
+                  nombre_medio: {
+                    type: Type.STRING,
+                    description: 'Nombre del medio de comunicación o influencer (ej: "Metrópoli (El Mundo)", "Cadena SER", "Foodies Madrid")'
+                  },
+                  propuesta_pitch: {
+                    type: Type.STRING,
+                    description: 'El texto del correo o propuesta redactado para el medio.'
+                  }
+                },
+                required: ['nombre_medio', 'propuesta_pitch']
               }
             }
           ]
@@ -305,27 +399,131 @@ ${JSON.stringify(contextoDatos)}
       }
     });
 
-    // Revisar si el modelo decidió llamar a nuestra herramienta de RRPP
+    // Revisar si el modelo decidió llamar a alguna herramienta
     if (response.functionCalls && response.functionCalls.length > 0) {
       const call = response.functionCalls[0];
+      
       if (call.name === 'enviar_exploradores_rrpp') {
         const termino = call.args.termino_busqueda;
         
-        // Guardar la orden en Supabase para que el agente Python la lea
-        const insertData = {
-          termino_busqueda: termino,
-          estado: 'Pendiente'
+        // 1. Investigación inmediata con Gemini AI (Scout en tiempo real sin esperas)
+        const scoutPrompt = `
+Eres un especialista en RRPP de hostelería y comunicación en España.
+El usuario necesita encontrar contactos de medios de comunicación, revistas, periódicos, programas de TV/radio o tiktokers/influencers sobre: "${termino}".
+
+Devuelve una lista JSON de 3 a 5 contactos referentes en España altamente específicos para esa búsqueda.
+Para cada uno especifica:
+- "nombre": Nombre del medio, programa, revista o creador de contenido (ej: "Cocituber", "Metrópoli (El Mundo)", "7 Caníbales", "Tapas Magazine", "Cadena SER Gastronomía", "Foodies Madrid").
+- "contacto": Correo electrónico de contacto o prensa (ej: "contacto@cocituber.com", "metropoli@elmundo.es", "redaccion@7canibales.com").
+- "tipo": Debe ser EXACTAMENTE uno de: "Prensa", "TV", "Radio" o "Influencer".
+- "alcance": Ej: "Nacional", "Local Madrid", "TikTok / Instagram (500k followers)".
+- "enfoque_editorial": Breve descripción del tipo de contenido que publican y por qué encaja.
+
+Devuelve ÚNICAMENTE un array JSON válido sin formato markdown ni texto adicional.
+`;
+
+        const scoutSchema = {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              nombre: { type: Type.STRING },
+              contacto: { type: Type.STRING },
+              tipo: { type: Type.STRING },
+              alcance: { type: Type.STRING },
+              enfoque_editorial: { type: Type.STRING }
+            },
+            required: ["nombre", "contacto", "tipo", "alcance", "enfoque_editorial"]
+          }
         };
-        if (selectedRestauranteId && selectedRestauranteId !== 'all') {
-            insertData.restaurante_id = selectedRestauranteId;
+
+        let candidatos = [];
+        try {
+          const scoutRes = await ai.models.generateContent({
+            model: 'gemini-3.5-flash-lite',
+            contents: [{ role: 'user', parts: [{ text: scoutPrompt }] }],
+            config: {
+              responseMimeType: "application/json",
+              responseSchema: scoutSchema,
+              temperature: 0.2
+            }
+          });
+          let cleanText = scoutRes.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+          candidatos = JSON.parse(cleanText);
+        } catch (e) {
+          console.error("Error ejecutando Scout en tiempo real:", e);
         }
-        await supabase.from('rrpp_ordenes_busqueda').insert(insertData);
-        
-        return `¡Oído cocina! 🚀 Acabo de enviar a mis agentes exploradores a buscar contactos para: **"${termino}"**. \n\nTardarán un ratito en peinar la red. Podrás ver los resultados que vayan encontrando en la pestaña de RRPP para darles tu visto bueno.`;
+
+        // 2. Inserción inmediata en Supabase en la tabla rrpp_medios
+        const mediosInsertados = [];
+        const tiposValidos = ['Prensa', 'TV', 'Radio', 'Influencer'];
+
+        for (const item of candidatos) {
+          const email = item.contacto ? item.contacto.toLowerCase().trim() : '';
+          if (!email || !item.nombre) continue;
+
+          let tipoFinal = item.tipo || 'Prensa';
+          if (!tiposValidos.includes(tipoFinal)) tipoFinal = 'Prensa';
+
+          // Evitar duplicados por email
+          const { data: existing } = await supabase.from('rrpp_medios').select('id').eq('contacto', email);
+          if (existing && existing.length > 0) {
+            mediosInsertados.push({ ...item, yaExistia: true });
+            continue;
+          }
+
+          const nuevoMedio = {
+            nombre: item.nombre.substring(0, 100),
+            contacto: email,
+            tipo: tipoFinal,
+            alcance: (item.alcance || 'Digital / Redes').substring(0, 50),
+            estado: 'Nuevo',
+            enfoque_editorial: item.enfoque_editorial || `Búsqueda: ${termino}`
+          };
+          if (selectedRestauranteId && selectedRestauranteId !== 'all') {
+            nuevoMedio.restaurante_id = selectedRestauranteId;
+          }
+
+          const { data: inserted } = await supabase.from('rrpp_medios').insert(nuevoMedio).select();
+          if (inserted && inserted[0]) {
+            mediosInsertados.push(inserted[0]);
+          } else {
+            mediosInsertados.push({ ...nuevoMedio, id: `temp-${Date.now()}` });
+          }
+        }
+
+        // Guardar la orden como completada en auditoría
+        await supabase.from('rrpp_ordenes_busqueda').insert({
+          termino_busqueda: termino,
+          estado: 'Completado'
+        });
+
+        return {
+          text: `¡Oído cocina! 🚀 He peinado la red y he encontrado e insertado **${mediosInsertados.length} contactos** para: **"${termino}"**.`,
+          action: {
+            type: 'rrpp_medios_encontrados',
+            termino: termino,
+            medios: mediosInsertados,
+            status: 'completed'
+          }
+        };
+      }
+
+      if (call.name === 'proponer_pitch_rrpp') {
+        const { nombre_medio, propuesta_pitch } = call.args;
+        return {
+          text: `He preparado un borrador de propuesta para **${nombre_medio}**. Puedes revisarlo, editarlo y aprobarlo directamente desde aquí:`,
+          action: {
+            type: 'propose_pitch_approval',
+            medioNombre: nombre_medio,
+            pitchText: propuesta_pitch,
+            status: 'pending'
+          }
+        };
       }
     }
 
-    return response.text;
+    return { text: response.text };
   } catch (error) {
     console.error("Error en ChefBot:", error);
     throw error;

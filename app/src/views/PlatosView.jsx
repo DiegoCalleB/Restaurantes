@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChefHat, TrendingUp, TrendingDown, Eye, AlertTriangle, Info, Trash2 } from 'lucide-react';
 
-export default function PlatosView({ platos = [], setView, setSelectedPlatoId, eliminarPlato }) {
+export default function PlatosView({ platos = [], setView, setSelectedPlatoId, eliminarPlato, actualizarPvpPlato }) {
   const platosConAlerta = platos.filter(p => p.hasAlert);
   return (
     <div>
@@ -110,8 +110,27 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
                 €{p.coste.toFixed(2)}
               </div>
               
-              <div style={{ fontWeight: 800 }}>
-                €{p.precioVenta.toFixed(2)}
+              <div style={{ fontWeight: 800, display: 'flex', flexDirection: 'column' }}>
+                <span>€{p.precioVenta.toFixed(2)}</span>
+                {esMargenPeligroso && p.pvpRecomendado > p.precioVenta && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (actualizarPvpPlato && window.confirm(`¿Subir PVP de '${p.nombre}' a €${p.pvpRecomendado.toFixed(2)} para recuperar el 70% de margen?`)) {
+                        await actualizarPvpPlato(p.id, p.pvpRecomendado);
+                      }
+                    }}
+                    style={{
+                      background: 'var(--dangerSoft)', color: 'var(--danger)',
+                      border: '1px solid var(--danger)', borderRadius: 6,
+                      fontSize: 10.5, fontWeight: 800, padding: '2px 6px',
+                      marginTop: 4, cursor: 'pointer', textAlign: 'left', width: 'max-content'
+                    }}
+                    title="Haz clic para aplicar la sugerencia de PVP y recuperar un 70% de margen"
+                  >
+                    💡 Sugerido: €{p.pvpRecomendado.toFixed(2)}
+                  </button>
+                )}
               </div>
               
               <div>

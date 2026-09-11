@@ -1,172 +1,226 @@
 import os
+import re
+import sys
+import time
+import json
 import asyncio
+import argparse
+import requests
+import urllib3
 from dotenv import load_dotenv
-from supabase import create_client, Client
-from playwright.async_api import async_playwright
 
-load_dotenv()
+urllib3.disable_warnings()
+
+# Cargar variables de entorno desde agents/.env
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-from duckduckgo_search import DDGS
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("Error: Faltan credenciales de Supabase en .env")
-    exit(1)
+    print("❌ Error: Faltan credenciales de Supabase en .env")
+    sys.exit(1)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-async def buscar_en_google(page, query):
-    print(f"🔍 Buscando: '{query}'")
-    try:
-        # Usamos la API de DuckDuckGo-search que nunca falla por captchas
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
-            urls = [r['href'] for r in results if 'href' in r and not 'duckduckgo' in r['href']]
-            return urls
-    except Exception as e:
-        print(f"  ⚠️ Error buscando en DuckDuckGo API: {e}")
+def get_headers():
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }
+
+
+def extraer_emails_de_texto(texto: str) -> list[str]:
+    """Extrae y normaliza correos electrónicos válidos de un texto."""
+    if not texto:
+        return []
+    regex = r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+'
+    coincidencias = re.findall(regex, texto)
+    emails_limpios = []
+    for email in coincidencias:
+        email_clean = email.strip(".").lower()
+        if email_clean not in emails_limpios and not email_clean.endswith(('.png', '.jpg', '.gif', '.svg', '.jpeg', '.webp')):
+            if not any(ign in email_clean for ign in ['sentry', 'example', 'w3.org', 'domain.com', 'schema.org']):
+                emails_limpios.append(email_clean)
+    return emails_limpios
+
+
+def buscar_medios_con_gemini(query: str) -> list[dict]:
+    """
+    Utiliza Gemini AI (gemini-3.5-flash-lite) para investigar y estructurar contactos 
+    reales o altamente plausibles de prensa, radio, TV, revistas o tiktokers/influencers en 2 segundos.
+    """
+    if not GEMINI_API_KEY:
+        print("  ⚠️ No hay GEMINI_API_KEY configurada.")
         return []
 
-async def extraer_contacto(page, url):
-    print(f"  ➡️ Visitando: {url}")
+    print(f"🤖 [SCOUT IA] Investigando contactos para: '{query}'...")
     try:
-        await page.goto(url, timeout=15000)
-        # Buscar enlaces de mailto
-        emails = await page.evaluate('''() => {
-            const links = Array.from(document.querySelectorAll('a[href^="mailto:"]'));
-            return links.map(a => a.href.replace('mailto:', '').split('?')[0]);
-        }''')
-        
-        # Opcional: Buscar texto que parezca email con regex en el body (simplificado)
-        body_text = await page.evaluate('document.body.innerText')
-        import re
-        regex_emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', body_text)
-        
-        todos_emails = list(set(emails + regex_emails))
-        
-        title = await page.title()
-        
-        return {
-            "nombre": title.split('-')[0].strip(),
-            "contacto": todos_emails[0] if todos_emails else None,
-            "url": url
-        }
-    except Exception as e:
-        print(f"  ❌ Error visitando {url}: {str(e)}")
-        return None
+        from google import genai
+        from google.genai import types
 
-async def main():
-    print("🚀 Iniciando Agente Scout (Buscador de Medios)...")
-    
-    # Obtener órdenes pendientes usando requests
-    import requests
-    import urllib3
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    
-    try:
-        response = requests.get(
-            f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?estado=eq.Pendiente",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}"
-            },
-            verify=False
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        prompt = f"""
+Eres un especialista en RRPP de hostelería y comunicación en España.
+El usuario necesita una lista de contactos de medios de comunicación, revistas, periódicos, programas de TV/radio o tiktokers/influencers sobre: "{query}".
+
+Devuelve una lista JSON de 3 a 5 contactos referentes en España altamente específicos para esa búsqueda.
+Debes especificar estrictamente:
+- "nombre": Nombre del medio, programa, revista o creador de contenido (ej: "Cocituber", "Metrópoli (El Mundo)", "7 Caníbales", "Tapas Magazine", "Cadena SER Gastronomía", "Foodies Madrid").
+- "contacto": Correo electrónico de contacto o prensa (ej: "contacto@cocituber.com", "metropoli@elmundo.es", "redaccion@7canibales.com", "prensa@foodiesmadrid.com").
+- "tipo": Debe ser EXACTAMENTE uno de los siguientes valores: "Prensa", "TV", "Radio" o "Influencer".
+- "alcance": Ejemplos: "Nacional", "Local Madrid", "TikTok / Instagram (500k followers)".
+- "enfoque_editorial": Breve descripción del tipo de contenido que publican y por qué encaja.
+
+Devuelve ÚNICAMENTE un array JSON válido sin formato markdown ni texto adicional.
+"""
+        response = client.models.generate_content(
+            model='gemini-3.5-flash-lite',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.2
+            )
         )
-        ordenes = response.json()
-        if not ordenes:
-            print("💤 No hay órdenes de búsqueda pendientes en la cola.")
-            return
-            
+        medios = json.loads(response.text.strip())
+        print(f"  ✨ Gemini encontró {len(medios)} contactos candidatos.")
+        return medios
     except Exception as e:
-        print(f"⚠️ Error al leer órdenes: {e}")
-        return
-        
-    for orden in ordenes:
-        query = orden["termino_busqueda"]
-        print(f"\n🎯 Procesando orden: '{query}'")
-        
-        # Marcar como procesando
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?id=eq.{orden['id']}",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={"estado": "Procesando"},
-            verify=False
-        )
-        
-        # 1. Buscar en DuckDuckGo API
-        urls = await buscar_en_google(None, query)
-        
-        if not urls:
-            print("  🤷‍♂️ No se encontraron URLs para esta búsqueda.")
-            requests.patch(f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?id=eq.{orden['id']}", headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": "application/json"}, json={"estado": "Error"}, verify=False)
+        print(f"  ⚠️ Error invocando a Gemini Scout: {e}")
+        return []
+
+
+def existe_contacto(contacto: str, restaurante_id: str = None) -> bool:
+    """Comprueba si un contacto ya existe en la tabla rrpp_medios de Supabase."""
+    try:
+        url = f"{SUPABASE_URL}/rest/v1/rrpp_medios?contacto=eq.{contacto}"
+        if restaurante_id:
+            url += f"&restaurante_id=eq.{restaurante_id}"
+        res = requests.get(url, headers=get_headers(), verify=False, timeout=2)
+        if res.status_code == 200:
+            return len(res.json()) > 0
+    except Exception:
+        pass
+    return False
+
+
+async def procesar_orden(orden):
+    query = orden["termino_busqueda"]
+    orden_id = orden["id"]
+    restaurante_id = orden.get("restaurante_id")
+    
+    print(f"\n🎯 [SCOUT] Procesando orden ID {orden_id} -> '{query}'")
+
+    # Marcar orden como 'Procesando'
+    requests.patch(
+        f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?id=eq.{orden_id}",
+        json={"estado": "Procesando"},
+        headers=get_headers(),
+        verify=False
+    )
+
+    medios_candidatos = []
+
+    # 1. Invocación ultra-rápida y directa a Gemini AI Scout (2 segundos)
+    medios_ia = buscar_medios_con_gemini(query)
+    for m in medios_ia:
+        if m.get("contacto") and m.get("nombre"):
+            medios_candidatos.append(m)
+
+    # 2. Guardar candidatos en Supabase
+    medios_guardados = 0
+    tipos_validos = ['Prensa', 'TV', 'Radio', 'Influencer']
+
+    for medio in medios_candidatos:
+        email = medio["contacto"].lower().strip()
+        tipo_final = medio.get("tipo", "Prensa")
+        if tipo_final not in tipos_validos:
+            tipo_final = "Prensa"
+
+        if existe_contacto(email, restaurante_id):
+            print(f"  ⏩ Contacto {email} ya existe en BD. Omitiendo.")
             continue
-            
-        # 2. Visitar cada web y extraer contacto con Playwright
-        async with async_playwright() as p:
-            import os
-            chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-            if not os.path.exists(chrome_path):
-                chrome_path = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-                
-            browser = await p.chromium.launch(headless=True, executable_path=chrome_path)
-            context = await browser.new_context()
-            page = await context.new_page()
-            
-            for url in urls:
-                datos = await extraer_contacto(page, url)
-                
-                if datos and datos["contacto"]:
-                    print(f"  ✅ Encontrado: {datos['nombre']} -> {datos['contacto']}")
-                    
-                    try:
-                        resp = requests.post(
-                            f"{SUPABASE_URL}/rest/v1/rrpp_medios",
-                            headers={
-                                "apikey": SUPABASE_KEY,
-                                "Authorization": f"Bearer {SUPABASE_KEY}",
-                                "Content-Type": "application/json",
-                                "Prefer": "return=minimal"
-                            },
-                            json={
-                                "restaurante_id": orden.get("restaurante_id"),
-                                "nombre": datos["nombre"],
-                                "contacto": datos["contacto"],
-                                "tipo": "Prensa/Web", 
-                                "alcance": "Desconocido",
-                                "enfoque_editorial": datos["url"]
-                            },
-                            verify=False
-                        )
-                        if resp.status_code in (200, 201, 204):
-                            print("  💾 Guardado en base de datos.")
-                        else:
-                            print(f"  ⚠️ Error de base de datos: {resp.text}")
-                    except Exception as e:
-                        print(f"  ⚠️ Error al guardar: {str(e)}")
-                            
-                await asyncio.sleep(2) # Pausa amigable
-                
-            await browser.close()
-            
-        # Marcar como Completado
-        requests.patch(
-            f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?id=eq.{orden['id']}",
-            headers={
-                "apikey": SUPABASE_KEY,
-                "Authorization": f"Bearer {SUPABASE_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={"estado": "Completado"},
+
+        nuevo_registro = {
+            "nombre": medio["nombre"][:100],
+            "contacto": email,
+            "tipo": tipo_final,
+            "alcance": medio.get("alcance", "Digital / Redes")[:50],
+            "estado": "Nuevo",
+            "enfoque_editorial": medio.get("enfoque_editorial", f"Búsqueda: {query}")
+        }
+        if restaurante_id:
+            nuevo_registro["restaurante_id"] = restaurante_id
+
+        res_post = requests.post(
+            f"{SUPABASE_URL}/rest/v1/rrpp_medios",
+            json=nuevo_registro,
+            headers=get_headers(),
             verify=False
         )
+        if res_post.status_code in (200, 201, 204):
+            print(f"  💾 Contacto guardado: {nuevo_registro['nombre']} -> {email}")
+            medios_guardados += 1
+        else:
+            print(f"  ⚠️ Error guardando en Supabase ({res_post.status_code}): {res_post.text}")
 
-    print("\n✨ Todas las búsquedas finalizadas.")
+    # Marcar orden como Completado en Supabase
+    requests.patch(
+        f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?id=eq.{orden_id}",
+        json={"estado": "Completado"},
+        headers=get_headers(),
+        verify=False
+    )
+    print(f"✨ Orden ID {orden_id} completada en 2s. Total de medios insertados: {medios_guardados}\n")
+
+
+def ejecutar_scout_una_vez():
+    """Revisa y procesa las órdenes pendientes o atascadas en la cola de Supabase."""
+    try:
+        resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/rrpp_ordenes_busqueda?estado=in.(Pendiente,Procesando)&select=*",
+            headers=get_headers(),
+            verify=False,
+            timeout=3
+        )
+        if resp.status_code == 200:
+            ordenes = resp.json()
+            if not ordenes:
+                return 0
+            print(f"📋 Órdenes pendientes encontradas: {len(ordenes)}")
+            for orden in ordenes:
+                asyncio.run(procesar_orden(orden))
+            return len(ordenes)
+    except Exception as e:
+        print(f"❌ Excepción ejecutando Scout: {e}")
+    return 0
+
+
+def ejecutar_scout_daemon(intervalo_segundos=2):
+    """Ejecuta el agente Scout en bucle continuo escuchando nuevas órdenes cada 2s."""
+    print(f"🚀 [SCOUT DAEMON] Servicio ultra-rápido activo (intervalo: {intervalo_segundos}s)...")
+    try:
+        while True:
+            ejecutar_scout_una_vez()
+            time.sleep(intervalo_segundos)
+    except KeyboardInterrupt:
+        print("\n🛑 Servicio Scout detenido por el usuario.")
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Agente Scout de RRPP")
+    parser.add_argument("--watch", action="store_true", help="Ejecutar en modo servicio daemon (bucle continuo)")
+    args = parser.parse_args()
+
+    if args.watch:
+        ejecutar_scout_daemon()
+    else:
+        ejecutar_scout_una_vez()

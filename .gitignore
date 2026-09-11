@@ -7,3 +7,6 @@ albaranes_escandallos/
 agents/venv/
 agents/.env
 app/.env
+__pycache__/
+*.pyc
+.gemini/

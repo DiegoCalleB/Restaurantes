@@ -13,6 +13,7 @@ export function useAppData() {
   const [platos, setPlatos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [ingredientesBase, setIngredientesBase] = useState([]);
+  const [facturasProveedor, setFacturasProveedor] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [errorMsg, setErrorMsg] = useState(null);
@@ -86,6 +87,37 @@ export function useAppData() {
     }
   };
 
+  const actualizarStockIngrediente = async (ingredienteId, data) => {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase
+        .from('ingredientes_base')
+        .update(data)
+        .eq('id', ingredienteId);
+      if (error) throw error;
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error actualizando ingrediente:", e);
+      return false;
+    }
+  };
+
+  const guardarFacturaProveedor = async (facturaData) => {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase
+        .from('facturas_proveedor')
+        .insert([facturaData]);
+      if (error) throw error;
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error guardando factura del proveedor:", e);
+      return false;
+    }
+  };
+
   const fetchData = async () => {
     if (!supabase) {
       console.warn("Supabase client is null. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
@@ -101,13 +133,36 @@ export function useAppData() {
       if (rests) setRestaurantes(rests);
 
       // Fetch catalog data
-      const { data: ingrData } = await supabase.from('ingredientes_base').select('id, nombre, unidad_medida, precio_estimado').order('nombre');
-      if (ingrData) setIngredientesBase(ingrData);
+      const { data: ingrData } = await supabase.from('ingredientes_base').select('*').order('nombre');
+      if (ingrData) {
+        setIngredientesBase(ingrData);
+      }
       const { data: platosData } = await supabase.from('platos').select('*');
-      const { data: escandallosData } = await supabase.from('escandallos').select('*, ingredientes_base(nombre, unidad_medida, precio_estimado)');
+      const { data: escandallosData } = await supabase.from('escandallos').select('*, ingredientes_base(*)');
 
       // Fetch proveedores
       const { data: provs } = await supabase.from('proveedores').select('*');
+
+      // Fetch facturas_proveedor
+      try {
+        const { data: facts } = await supabase.from('facturas_proveedor').select('*, proveedores(nombre)').order('creado_en', { ascending: false });
+        if (facts) {
+          setFacturasProveedor(facts.map(f => ({
+            id: f.id,
+            proveedor: f.proveedores?.nombre || 'Proveedor',
+            numeroFactura: f.numero_factura,
+            fechaEmision: f.fecha_emision,
+            periodoMes: f.periodo_mes || 'Agosto 2026',
+            importeFactura: f.importe_factura,
+            sumaAlbaranes: f.suma_albaranes,
+            diferencia: f.diferencia,
+            estado: f.estado,
+            desgloseDiscrepancias: f.desglose_discrepancias || []
+          })));
+        }
+      } catch (errFact) {
+        console.warn("Tabla facturas_proveedor no disponible:", errFact);
+      }
 
       // Fetch albaranes con sus líneas y el nombre del proveedor
       const { data: albs } = await supabase
@@ -163,7 +218,7 @@ export function useAppData() {
         setAlbaranes(formattedAlbaranes);
       }
 
-      // 3. Procesar Platos y Escandallos (Rentabilidad Viva)
+      // 3. Procesar Platos y Escandallos (Rentabilidad Viva y Alérgenos)
       if (platosData && escandallosData && ingrData) {
         const preciosIngredientes = {};
         
@@ -205,21 +260,28 @@ export function useAppData() {
           
           let costeTotal = 0;
           let hasAlert = false;
+          const alergenosSet = new Set();
           
           const ingredientesDetalle = receta.map(e => {
-            const stats = priceStats[e.ingrediente_id] || { current: e.ingredientes_base?.precio_estimado || 0, isAlert: false, percentChange: 0 };
+            const ingBase = e.ingredientes_base || {};
+            const stats = priceStats[e.ingrediente_id] || { current: ingBase.precio_estimado || 0, isAlert: false, percentChange: 0 };
             const precioKg = stats.current; 
             const costeLinea = precioKg * e.cantidad;
             costeTotal += costeLinea;
             
             if (stats.isAlert) hasAlert = true;
 
+            // Colectar alérgenos
+            const listAlerg = Array.isArray(ingBase.alergenos) ? ingBase.alergenos : (ingBase.alergenos ? JSON.parse(ingBase.alergenos) : []);
+            listAlerg.forEach(a => alergenosSet.add(a));
+
             return {
-              nombre: e.ingredientes_base?.nombre || 'Desconocido',
+              nombre: ingBase.nombre || 'Desconocido',
               cantidad: e.cantidad,
-              unidad: e.ingredientes_base?.unidad_medida || 'u',
+              unidad: ingBase.unidad_medida || 'u',
               precioReferencia: precioKg,
               coste: costeLinea,
+              alergenos: listAlerg,
               isAlert: stats.isAlert,
               percentChange: stats.percentChange,
               albaranId: stats.albaranId
@@ -230,6 +292,9 @@ export function useAppData() {
           const margenEuros = precioVenta - costeTotal;
           const margenPct = precioVenta > 0 ? (margenEuros / precioVenta) * 100 : 0;
 
+          // PVP Recomendado para mantener un 70% de margen bruto (coste de materia prima = 30%)
+          const pvpRecomendado = costeTotal > 0 ? Math.ceil((costeTotal / 0.30) * 2) / 2 : precioVenta; // Redondeado a los 50 céntimos más cercanos
+
           return {
             id: plato.id,
             nombre: plato.nombre,
@@ -237,10 +302,12 @@ export function useAppData() {
             categoria: plato.categoria || 'Otros',
             orden: plato.orden || 999,
             precioVenta: precioVenta,
+            pvpRecomendado: pvpRecomendado,
             coste: costeTotal,
             margenEuros: margenEuros,
             margenPct: margenPct,
-            hasAlert: hasAlert,
+            hasAlert: hasAlert || margenPct < 65.0,
+            alergenos: Array.from(alergenosSet),
             ingredientes: ingredientesDetalle
           };
         });
@@ -248,7 +315,7 @@ export function useAppData() {
         setPlatos(platosCompletos);
       }
       
-      // Fetch pedidos (si existe la tabla)
+      // Fetch pedidos
       try {
         const { data: resPed } = await supabase
           .from('pedidos')
@@ -281,8 +348,23 @@ export function useAppData() {
     }
   };
 
+  const actualizarPvpPlato = async (platoId, nuevoPvp) => {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase
+        .from('platos')
+        .update({ precio_venta: nuevoPvp })
+        .eq('id', platoId);
+      if (error) throw error;
+      await fetchData();
+      return true;
+    } catch (e) {
+      console.error("Error actualizando PVP del plato:", e);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    // Timeout de seguridad: Si tras 7 segundos sigue cargando, desbloqueamos la UI
     const timer = setTimeout(() => {
       setLoading(prev => {
         if (prev) {
@@ -298,5 +380,8 @@ export function useAppData() {
     return () => clearTimeout(timer);
   }, []);
 
-  return { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, errorMsg, refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran };
+  return {
+    albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, facturasProveedor, loading, errorMsg,
+    refreshData: fetchData, crearEscandallo, eliminarPlato, eliminarAlbaran, actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor
+  };
 }

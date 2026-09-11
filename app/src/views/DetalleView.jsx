@@ -42,12 +42,31 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
       </div>
 
       {flaggedCount > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--dangerSoft)', border: '1px solid rgba(142, 38, 38, 0.2)', borderRadius: 14, padding: '15px 18px', marginBottom: 20 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--danger)', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <AlertTriangle size={16} />
-          </div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--danger)' }}>
-            Se han detectado {flaggedCount} incidencias en este albarán frente al pedido registrado o tarifa pactada.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--dangerSoft)', border: '1px solid rgba(142, 38, 38, 0.2)', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--danger)', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <AlertTriangle size={16} />
+            </div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--danger)', flex: 1 }}>
+              Se han detectado {flaggedCount} incidencias en este albarán frente a la tarifa o pedido registrado.
+            </div>
+            <button
+              onClick={() => {
+                const lineasConIncidencia = selected.items.filter(i => i.flag).map(i => `- ${i.producto}: ${i.motivo}`).join('\n');
+                const textoReclamacion = `Hola team de ${selected.proveedor},\n\nOs escribo en relación al albarán nº ${selected.numero} de fecha ${selected.fecha}.\n\nHemos detectado las siguientes incidencias en los precios/cantidades:\n${lineasConIncidencia}\n\nPor favor, confirmadnos si nos emitís nota de abono o rectificativa.\n\nUn saludo!`;
+                
+                const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoReclamacion)}`;
+                window.open(urlWa, '_blank');
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: '#25D366', color: '#fff', border: 'none',
+                padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 800,
+                cursor: 'pointer', boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)'
+              }}
+            >
+              📱 Reclamar por WhatsApp
+            </button>
           </div>
         </div>
       )}

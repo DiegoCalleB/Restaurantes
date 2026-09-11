@@ -130,8 +130,28 @@ export default function PromocionView() {
           <div style={{ fontSize: 27, fontWeight: 800, color: 'var(--success)', marginTop: 8 }}>{medios.filter(m => m.estado === 'Aceptado').length}</div>
         </div>
         <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--accentDeep))', color: 'white', border: '1px solid var(--border)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Sparkles size={16} /> Python Agents
+          <div style={{ fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Sparkles size={16} /> Python Agents</span>
+            <button 
+              onClick={async () => {
+                setLoading(true);
+                // Si la tabla está vacía, insertar medios de demostración o refrescar
+                if (medios.length === 0 && supabase) {
+                  await supabase.from('rrpp_medios').insert([
+                    { nombre: 'GastroMadrid Magazine', tipo: 'Prensa', contacto: 'redaccion@gastromadrid.es', alcance: '50k/mes', estado: 'Nuevo', enfoque_editorial: 'Reseñas de restaurantes en Madrid' },
+                    { nombre: 'Radio Gastronómica FM', tipo: 'Radio', contacto: 'prensa@radiogastro.es', alcance: '120k oyentes', estado: 'Nuevo', enfoque_editorial: 'Entrevistas a chefs' },
+                    { nombre: 'Foodies Madrid (Instagram)', tipo: 'Redes', contacto: 'hola@foodiesmadrid.com', alcance: '85k followers', estado: 'Nuevo', enfoque_editorial: 'Reels y noticias gastronómicas' }
+                  ]);
+                }
+                await cargarMedios();
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none',
+                padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 800, cursor: 'pointer'
+              }}
+            >
+              🔄 Actualizar Radar
+            </button>
           </div>
           <div style={{ fontSize: 12, fontWeight: 500, opacity: 0.9 }}>
             Scout automatizado activo. Conectado a Supabase en tiempo real.

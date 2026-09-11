@@ -11,12 +11,15 @@ import ProveedoresView from './views/ProveedoresView';
 import DetalleView from './views/DetalleView';
 import PlatosView from './views/PlatosView';
 import RecetaView from './views/RecetaView';
-import PedidosView from './views/PedidosView';
 import ChefBotView from './views/ChefBotView';
 import NuevoEscandalloView from './views/NuevoEscandalloView';
 import PromocionView from './views/PromocionView';
 import LoginView from './views/LoginView';
 import SubirCartaView from './views/SubirCartaView';
+import SimuladorMenuView from './views/SimuladorMenuView';
+import { PedidosView } from './views/PedidosView';
+import { FacturasConciliacionView } from './views/FacturasConciliacionView';
+import { AlergenosView } from './views/AlergenosView';
 
 function App() {
   const [currentUser, setCurrentUser] = useState({ username: 'EmilioGallego', role: 'admin' });
@@ -28,7 +31,11 @@ function App() {
   const [albaranesFilter, setAlbaranesFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
   
-  const { albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, loading, errorMsg, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran } = useAppData();
+  const {
+    albaranes, proveedores, restaurantes, platos, pedidos, ingredientesBase, facturasProveedor,
+    loading, errorMsg, refreshData, crearEscandallo, eliminarPlato, eliminarAlbaran,
+    actualizarPvpPlato, actualizarStockIngrediente, guardarFacturaProveedor
+  } = useAppData();
 
   // Asegurar que un local esté seleccionado si restaurantes cambia
   React.useEffect(() => {
@@ -43,23 +50,29 @@ function App() {
 
   const navItems = [
     { key: 'dashboard', label: 'Panel general', icon: <LayoutDashboard size={16} /> },
-    { key: 'pedidos', label: 'Pedidos', icon: <Package size={16} /> },
+    { key: 'pedidos', label: 'Pedidos 1-Click', icon: <Package size={16} /> },
+    { key: 'facturas_conciliacion', label: 'Caza-Trampas Facturas', icon: <FileText size={16} /> },
+    { key: 'alergenos', label: 'Carta Alérgenos', icon: <ChefHat size={16} /> },
     { key: 'albaranes', label: 'Albaranes', icon: <FileText size={16} /> },
     { key: 'subir', label: 'Subir albarán', icon: <UploadCloud size={16} /> },
     { key: 'proveedores', label: 'Proveedores', icon: <Users size={16} /> },
     { key: 'platos', label: 'Escandallos', icon: <FileText size={16} /> },
+    { key: 'simulador_menu', label: 'Simulador Menú', icon: <ChefHat size={16} /> },
     { key: 'promocion', label: 'Promoción', icon: <Megaphone size={16} /> },
     { key: 'chefbot_widget', label: 'ChefBot (IA)', icon: <Bot size={16} /> },
   ];
 
   const titles = {
     dashboard: ['Panel general', 'Resumen de compras y control de albaranes'],
-    pedidos: ['Control de Pedidos', 'Cruza lo que has pedido con lo que te facturan'],
+    pedidos: ['Pedidos Sugeridos 1-Click', 'Faltas automáticas por Par Stock y envío por WhatsApp'],
+    facturas_conciliacion: ['Conciliador "Caza-Trampas"', 'Cruza la factura del proveedor con los albaranes validados'],
+    alergenos: ['Carta Oficial de Alérgenos', 'Fichas técnicas y cumplimiento del Reglamento UE 1169/2011'],
     albaranes: ['Albaranes', 'Histórico de albaranes recibidos y su estado'],
     detalle: ['Revisión de albarán', 'Datos extraídos automáticamente por IA'],
     proveedores: ['Proveedores', 'Comparativa de precio, incidencias y puntualidad'],
     subir: ['Subir albarán', 'Digitaliza un nuevo albarán en segundos'],
     platos: ['Escandallos y Rentabilidad', 'Análisis en tiempo real de tus platos'],
+    simulador_menu: ['Simulador de Menú del Día', 'Calcula la rentabilidad real de los combos de menú'],
     receta: ['Detalle del Escandallo', 'Desglose de costes de materia prima'],
     promocion: ['Promoción y Medios', 'Contacta con prensa y TV sin agencias'],
   };
@@ -209,15 +222,18 @@ function App() {
         ) : (
           <>
             {view === 'dashboard' && <DashboardView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} allAlbaranes={albaranes} proveedoresData={activeProveedores} localesData={restaurantes} />}
-            {view === 'pedidos' && <PedidosView pedidos={activePedidos} proveedoresData={activeProveedores} />}
-            { view === 'albaranes' && <AlbaranesView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} albaranesFilter={albaranesFilter} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} eliminarAlbaran={eliminarAlbaran} /> }
-            { view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} /> }
-            { view === 'proveedores' && <ProveedoresView isAdmin={isAdmin} proveedoresData={activeProveedores} /> }
-            { view === 'subir' && <SubirView setView={setView} setSelectedId={setSelectedId} onUploadComplete={refreshData} /> }
-            { view === 'platos' && <PlatosView platos={activePlatos} setView={setView} setSelectedPlatoId={setSelectedPlatoId} eliminarPlato={eliminarPlato} /> }
-            { view === 'receta' && <RecetaView selectedPlatoId={selectedPlatoId} setView={setView} setSelectedId={setSelectedId} platos={activePlatos} eliminarPlato={eliminarPlato} /> }
+            {view === 'pedidos' && <PedidosView ingredientesBase={ingredientesBase} proveedores={activeProveedores} actualizarStockIngrediente={actualizarStockIngrediente} />}
+            {view === 'facturas_conciliacion' && <FacturasConciliacionView albaranes={activeAlbaranes} facturasProveedor={facturasProveedor} guardarFacturaProveedor={guardarFacturaProveedor} />}
+            {view === 'alergenos' && <AlergenosView platos={activePlatos} ingredientesBase={ingredientesBase} actualizarStockIngrediente={actualizarStockIngrediente} />}
+            {view === 'albaranes' && <AlbaranesView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} albaranesFilter={albaranesFilter} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} eliminarAlbaran={eliminarAlbaran} />}
+            {view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} />}
+            {view === 'proveedores' && <ProveedoresView isAdmin={isAdmin} proveedoresData={activeProveedores} />}
+            {view === 'subir' && <SubirView setView={setView} setSelectedId={setSelectedId} onUploadComplete={refreshData} />}
+            {view === 'platos' && <PlatosView platos={activePlatos} setView={setView} setSelectedPlatoId={setSelectedPlatoId} eliminarPlato={eliminarPlato} actualizarPvpPlato={actualizarPvpPlato} />}
+            {view === 'receta' && <RecetaView selectedPlatoId={selectedPlatoId} setView={setView} setSelectedId={setSelectedId} platos={activePlatos} eliminarPlato={eliminarPlato} />}
             {view === 'nuevo_escandallo' && <NuevoEscandalloView setView={setView} ingredientesBase={ingredientesBase} crearEscandallo={crearEscandallo} />}
             {view === 'subir_carta' && <SubirCartaView setView={setView} selectedRestauranteId={selectedRestauranteId} onUploadComplete={refreshData} />}
+            {view === 'simulador_menu' && <SimuladorMenuView platos={activePlatos} />}
             {view === 'promocion' && <PromocionView />}
           </>
         )}
@@ -229,6 +245,7 @@ function App() {
         onClose={() => setIsChatOpen(false)} 
         contextoDatos={{ albaranes: activeAlbaranes, proveedores: activeProveedores, platos: activePlatos }} 
         selectedRestauranteId={selectedRestauranteId} 
+        onNavigate={setView}
       />
 
       {/* Floating ChefBot Widget Button */}
