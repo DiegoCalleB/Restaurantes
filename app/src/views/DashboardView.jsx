@@ -104,7 +104,7 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 22 }}>
+      <div className="grid-4" style={{ gap: 14, marginBottom: 22 }}>
         {kpis.map((k, i) => (
           <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
@@ -117,7 +117,7 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 14, alignItems: 'stretch' }}>
+      <div className="split-2col" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 14, alignItems: 'stretch' }}>
         {/* Gasto por proveedor */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
           <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 18 }}>Gasto por proveedor · este mes</div>
@@ -180,6 +180,8 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
       {isAdmin && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, marginBottom: 14 }}>
           <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 16 }}>Locales de la cadena</div>
+          <div className="scroll-x">
+          <div style={{ minWidth: 520 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 10px' }}>
             <div>Local</div><div>Albaranes</div><div>Gasto mes</div><div>Incidencias</div>
           </div>
@@ -202,20 +204,24 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
               </div>
             );
           })}
+          </div>
+          </div>
         </div>
       )}
 
       {/* Recientes */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
         <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 16 }}>Actividad reciente</div>
+        <div className="scroll-x">
+        <div style={{ minWidth: 600 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1fr 1fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 10px' }}>
           <div>Nº albarán</div><div>Proveedor</div><div>Fecha</div><div>Importe</div><div>Estado</div>
         </div>
         {albaranesData.slice(0,5).map(a => {
           const m = getStatusMeta(a.estado);
           return (
-            <div 
-              key={a.id} 
+            <div
+              key={a.id}
               onClick={() => { setSelectedId(a.id); setView('detalle'); }}
               style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1fr 1fr 1fr', alignItems: 'center', padding: '12px 8px', borderTop: '1px solid var(--bg)', cursor: 'pointer', fontSize: 13.5, borderRadius: 10 }}
             >
@@ -230,6 +236,8 @@ export default function DashboardView({ isAdmin, setView, setSelectedId, setAlba
             </div>
           );
         })}
+        </div>
+        </div>
       </div>
     </div>
   );

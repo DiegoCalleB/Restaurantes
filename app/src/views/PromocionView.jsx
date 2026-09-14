@@ -116,7 +116,7 @@ export default function PromocionView() {
   return (
     <div>
       {/* HEADER METRICS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 22 }}>
+      <div className="grid-4" style={{ gap: 14, marginBottom: 22 }}>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
           <div style={{ fontSize: 11.5, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase' }}>Medios en Radar</div>
           <div style={{ fontSize: 27, fontWeight: 800, marginTop: 8 }}>{medios.length}</div>
@@ -160,8 +160,8 @@ export default function PromocionView() {
       </div>
 
       {/* FILTROS */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {['Todos', 'TV', 'Radio', 'Prensa', 'Podcast', 'Redes'].map(t => (
             <button
               key={t}
@@ -183,7 +183,7 @@ export default function PromocionView() {
             </button>
           ))}
         </div>
-        <div style={{ position: 'relative', width: 250 }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: 250, flex: '1 1 200px' }}>
           <Search size={16} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--textSoft)' }} />
           <input 
             type="text" 
@@ -201,6 +201,8 @@ export default function PromocionView() {
 
       {/* LISTADO DE MEDIOS */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+        <div className="scroll-x">
+        <div style={{ minWidth: 620 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1.2fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 10px' }}>
           <div>Medio</div><div>Tipo</div><div>Alcance Estimado</div><div>Estado</div><div>Acción</div>
         </div>
@@ -247,6 +249,8 @@ export default function PromocionView() {
             No se han encontrado medios. El scout aún no ha metido datos o los filtros los ocultan.
           </div>
         )}
+        </div>
+        </div>
       </div>
 
       {/* MODAL REDACTAR PITCH */}

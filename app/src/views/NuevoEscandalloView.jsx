@@ -65,7 +65,7 @@ export default function NuevoEscandalloView({ setView, ingredientesBase = [], cr
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)', maxWidth: 800 }}>
         
         {/* Datos del Plato */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 30 }}>
+        <div className="grid-fields" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 30 }}>
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--textSoft)', marginBottom: 6 }}>Nombre del Plato</label>
             <input 

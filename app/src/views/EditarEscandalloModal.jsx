@@ -257,7 +257,7 @@ export default function EditarEscandalloModal({ plato, ingredientesBase = [], is
         </div>
 
         {/* CAMPOS PRINCIPALES DEL PLATO */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
+        <div className="grid-fields" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--textSoft)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
               Nombre del Plato
@@ -349,7 +349,8 @@ export default function EditarEscandalloModal({ plato, ingredientesBase = [], is
           </div>
 
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <div className="scroll-x">
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 520 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 800, color: 'var(--textSoft)', textTransform: 'uppercase' }}>
                   <th style={{ padding: '10px 14px', textAlign: 'left', width: '50%' }}>Ingrediente Base</th>
@@ -415,6 +416,7 @@ export default function EditarEscandalloModal({ plato, ingredientesBase = [], is
                 ))}
               </tbody>
             </table>
+            </div>
 
             {lineas.length === 0 && (
               <div style={{ padding: 20, textAlign: 'center', fontSize: 13, color: 'var(--textSoft)' }}>

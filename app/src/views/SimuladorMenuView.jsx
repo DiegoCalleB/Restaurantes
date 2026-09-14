@@ -34,7 +34,7 @@ export default function SimuladorMenuView({ platos = [] }) {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
+      <div className="split-2col" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         {/* PANEL DE CONFIGURACIÓN */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 18 }}>Configura la combinación del comensal</h3>

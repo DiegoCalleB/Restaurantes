@@ -90,7 +90,7 @@ export default function SubirCartaView({ setView, selectedRestauranteId, onUploa
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 5 }}>Importar Carta con IA</h2>
           <p style={{ color: 'var(--textSoft)', fontSize: 14 }}>Sube una foto o PDF de la carta del restaurante seleccionado. La IA extraerá los platos y calculará un escandallo inicial.</p>
@@ -176,8 +176,8 @@ export default function SubirCartaView({ setView, selectedRestauranteId, onUploa
           
           <div style={{ padding: '0 10px' }}>
             {uploads.map(u => (
-              <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px', borderBottom: '1px solid var(--bg)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px', borderBottom: '1px solid var(--bg)', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   {u.status === 'idle' && <div style={{width:8, height:8, borderRadius:'50%', background:'var(--border)'}}></div>}
                   {(u.status === 'processing' || u.status === 'saving') && <Loader2 size={16} color="var(--accent)" style={{ animation: 'spin 1s linear infinite' }} />}
                   {u.status === 'done' && <CheckCircle size={16} color="var(--success)" />}
