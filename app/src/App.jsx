@@ -118,12 +118,14 @@ function App() {
     }
   ];
 
-  // Pestañas del menú inferior en móvil (las 4 acciones más usadas + botón central de ChefBot)
+  // Pestañas del menú inferior en móvil: el loop operativo diario
+  // (ver números, registrar lo que llega, pedir cuando falta stock) + ChefBot al centro.
+  // Escandallos, Proveedores, Facturas... quedan a un toque en "Más".
   const mobileTabs = [
     { key: 'dashboard', label: 'Panel', icon: <LayoutDashboard size={21} /> },
     { key: 'albaranes', label: 'Albaranes', icon: <FileText size={21} /> },
     { key: '__chefbot__', label: 'ChefBot', icon: <Bot size={24} />, isCenter: true },
-    { key: 'platos', label: 'Carta', icon: <ChefHat size={21} /> },
+    { key: 'pedidos', label: 'Pedidos', icon: <Package size={21} /> },
     { key: '__more__', label: 'Más', icon: <Menu size={21} /> },
   ];
 
@@ -391,7 +393,7 @@ function App() {
         {mobileTabs.map(tab => {
           const isActive = tab.isCenter
             ? (tab.key === '__chefbot__' ? isChatOpen : isMobileMenuOpen)
-            : (view === 'detalle' ? tab.key === 'albaranes' : view === 'receta' ? tab.key === 'platos' : view === tab.key);
+            : (view === 'detalle' ? tab.key === 'albaranes' : view === tab.key);
 
           return (
             <button
