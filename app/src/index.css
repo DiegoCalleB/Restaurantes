@@ -512,9 +512,24 @@ a {
 
 /* Print Rules */
 @media print {
-  .no-print, .sidebar, .mobile-nav-toggle, .mobile-bottom-nav { display: none !important; }
+  .no-print, .sidebar, .mobile-nav-toggle, .mobile-bottom-nav, .sidebar-backdrop { display: none !important; }
   .main-content { padding: 0 !important; background: #fff !important; }
   .card { border: none !important; box-shadow: none !important; }
+}
+
+/* Fondo oscuro tras el sidebar móvil, para cerrar tocando fuera */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Mobile Toggle */
@@ -560,6 +575,10 @@ a {
 
   .mobile-bottom-nav {
     display: flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
   }
 
   .chefbot-fab {

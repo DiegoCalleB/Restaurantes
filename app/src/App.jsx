@@ -186,13 +186,21 @@ function App() {
 
   return (
     <div className="app-layout">
-      {/* Botón de Menú Móvil */}
-      <button 
-        className="mobile-nav-toggle"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Botón de cerrar el menú móvil: solo aparece con el sidebar abierto.
+          Para abrirlo en móvil se usa "Más" en la barra inferior. */}
+      {isMobileMenuOpen && (
+        <button
+          className="mobile-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <X size={24} />
+        </button>
+      )}
+
+      {/* Fondo oscuro para cerrar el sidebar tocando fuera */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
 
       {/* SIDEBAR */}
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
