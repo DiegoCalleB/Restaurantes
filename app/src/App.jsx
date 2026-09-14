@@ -118,6 +118,15 @@ function App() {
     }
   ];
 
+  // Pestañas del menú inferior en móvil (las 4 acciones más usadas + botón central de ChefBot)
+  const mobileTabs = [
+    { key: 'dashboard', label: 'Panel', icon: <LayoutDashboard size={21} /> },
+    { key: 'albaranes', label: 'Albaranes', icon: <FileText size={21} /> },
+    { key: '__chefbot__', label: 'ChefBot', icon: <Bot size={24} />, isCenter: true },
+    { key: 'platos', label: 'Carta', icon: <ChefHat size={21} /> },
+    { key: '__more__', label: 'Más', icon: <Menu size={21} /> },
+  ];
+
   const titles = {
     dashboard: ['Panel general', 'Resumen de compras y control de albaranes'],
     pedidos: ['Pedidos Sugeridos 1-Click', 'Faltas automáticas por Par Stock y envío por WhatsApp'],
@@ -376,6 +385,36 @@ function App() {
           <Bot size={28} />
         </div>
       )}
+
+      {/* Menú inferior de navegación en móvil (se oculta si el sidebar está abierto) */}
+      <nav className={`mobile-bottom-nav ${isMobileMenuOpen ? 'mobile-bottom-nav-hidden' : ''}`}>
+        {mobileTabs.map(tab => {
+          const isActive = tab.isCenter
+            ? (tab.key === '__chefbot__' ? isChatOpen : isMobileMenuOpen)
+            : (view === 'detalle' ? tab.key === 'albaranes' : view === 'receta' ? tab.key === 'platos' : view === tab.key);
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => {
+                if (tab.key === '__chefbot__') {
+                  setIsChatOpen(true);
+                } else if (tab.key === '__more__') {
+                  setIsMobileMenuOpen(true);
+                } else {
+                  setView(tab.key);
+                  setIsMobileMenuOpen(false);
+                }
+              }}
+              className={`mobile-nav-item ${tab.isCenter ? 'center' : ''} ${isActive ? 'active' : ''}`}
+            >
+              <span className="mobile-nav-icon-wrap">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
