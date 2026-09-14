@@ -17,10 +17,12 @@ export default function ProveedoresView({ isAdmin, proveedoresData = [] }) {
   ];
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
+      <div className="scroll-x">
+      <div style={{ minWidth: 680 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1fr 1fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', letterSpacing: '0.03em', padding: '14px 22px', background: 'var(--bg)' }}>
         <div>Proveedor</div><div>Albaranes</div><div>Importe total</div><div>Incidencias</div><div>Var. precio</div><div>Puntualidad</div>
       </div>
-      
+
       {proveedoresData.map((p, i) => {
         const incColor = p.incidenciasPct >= 8 ? 'var(--danger)' : p.incidenciasPct >= 3 ? 'var(--warning)' : 'var(--success)';
         const isExpanded = expandedId === p.id;
@@ -45,7 +47,7 @@ export default function ProveedoresView({ isAdmin, proveedoresData = [] }) {
             {/* Panel de Inteligencia de Negocio */}
             {isExpanded && (
               <div style={{ padding: '20px 40px', background: 'var(--bg)', borderTop: '1px dashed var(--border)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', gap: 40 }}>
+                <div className="split-2col-flex" style={{ display: 'flex', gap: 40, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1 }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 0, marginBottom: 16 }}>
                       <ChartIcon size={18} color="var(--accent)" /> 
@@ -80,6 +82,8 @@ export default function ProveedoresView({ isAdmin, proveedoresData = [] }) {
           </React.Fragment>
         );
       })}
+      </div>
+      </div>
     </div>
   );
 }

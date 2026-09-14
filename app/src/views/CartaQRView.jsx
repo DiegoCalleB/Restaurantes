@@ -90,7 +90,7 @@ export default function CartaQRView({ restaurantes = [], selectedRestauranteId, 
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={() => onVerCartaPublica && onVerCartaPublica()}
             style={{
@@ -131,13 +131,13 @@ export default function CartaQRView({ restaurantes = [], selectedRestauranteId, 
         flexWrap: 'wrap',
         gap: 12
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <Smartphone size={20} style={{ color: 'var(--accentLight)' }} />
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accentLight)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               URL pública de tu carta digital
             </div>
-            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace', marginTop: 2 }}>
+            <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace', marginTop: 2, wordBreak: 'break-all' }}>
               {urlCartaPublica}
             </div>
           </div>
@@ -176,7 +176,7 @@ export default function CartaQRView({ restaurantes = [], selectedRestauranteId, 
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 24 }}>
         
         {/* PANEL DE PERSONALIZACIÓN DEL QR */}
         <div style={{

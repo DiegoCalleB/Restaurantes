@@ -11,7 +11,7 @@ export default function AlbaranesView({ isAdmin, setView, setSelectedId, albaran
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, padding: '9px 16px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)' }}>Proveedor: Todos</div>
         
         <select 
@@ -28,10 +28,12 @@ export default function AlbaranesView({ isAdmin, setView, setSelectedId, albaran
       </div>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
+        <div className="scroll-x">
+        <div style={{ minWidth: 760 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1fr 1fr 1fr 1.2fr 0.6fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', letterSpacing: '0.03em', padding: '14px 22px', background: 'var(--bg)' }}>
           <div>Nº albarán</div><div>Proveedor</div><div>Tipo</div><div>Fecha</div><div>Importe</div><div>Estado</div><div></div>
         </div>
-        
+
         {filteredData.map(a => {
           const m = getStatusMeta(a.estado);
           return (
@@ -67,6 +69,8 @@ export default function AlbaranesView({ isAdmin, setView, setSelectedId, albaran
             </div>
           );
         })}
+        </div>
+        </div>
       </div>
     </div>
   );

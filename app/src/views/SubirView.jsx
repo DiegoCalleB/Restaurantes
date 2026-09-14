@@ -147,8 +147,8 @@ export default function SubirView({ setView, setSelectedId }) {
           
           <div style={{ padding: '0 10px' }}>
             {uploads.map(u => (
-              <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px', borderBottom: '1px solid var(--bg)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px', borderBottom: '1px solid var(--bg)', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   {u.status === 'idle' && <div style={{width:8, height:8, borderRadius:'50%', background:'var(--border)'}}></div>}
                   {(u.status === 'uploading' || u.status === 'processing') && <Loader2 size={16} color="var(--accent)" style={{ animation: 'spin 1s linear infinite' }} />}
                   {u.status === 'done' && <CheckCircle size={16} color="var(--success)" />}

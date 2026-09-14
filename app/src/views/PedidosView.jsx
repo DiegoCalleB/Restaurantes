@@ -61,7 +61,7 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
       )}
 
       {/* Grid: Pedidos Sugeridos por Proveedor */}
-      <div className="flex-between mb-16">
+      <div className="flex-between flex-wrap gap-10 mb-16">
         <h2 className="title-md flex-center gap-8">
           <Send className="text-accent" size={20} />
           <span>Pedidos Sugeridos por Proveedor ({Object.keys(pedidosPorProveedor).length})</span>
@@ -130,7 +130,7 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
 
       {/* Tabla de Gestión Par Stock */}
       <div className="card overflow-hidden">
-        <div className="p-16 bg-surface border-b flex-between">
+        <div className="p-16 bg-surface border-b flex-between flex-wrap gap-10">
           <h2 className="title-md flex-center gap-8">
             <RefreshCw className="text-accent" size={20} />
             <span>Control de Par Stock por Ingrediente</span>
@@ -138,7 +138,8 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
           <span className="text-xs text-muted font-semibold">{catalog.length} Artículos en Catálogo</span>
         </div>
 
-        <table className="table-custom">
+        <div className="scroll-x">
+        <table className="table-custom" style={{ minWidth: 640 }}>
           <thead>
             <tr>
               <th>Ingrediente Base</th>
@@ -220,6 +221,7 @@ export function PedidosView({ ingredientesBase = [], proveedores = [], actualiza
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

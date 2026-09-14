@@ -342,14 +342,14 @@ export default function ChefBotView({ contextoDatos, selectedRestauranteId, isOp
   };
 
   return (
-    <div style={{ 
-      display: isOpen ? 'flex' : 'none', 
-      flexDirection: 'column', 
-      position: 'fixed', 
-      bottom: 100, 
-      right: 30, 
-      width: 420, 
-      height: 620, 
+    <div className="chefbot-panel" style={{
+      display: isOpen ? 'flex' : 'none',
+      flexDirection: 'column',
+      position: 'fixed',
+      bottom: 100,
+      right: 30,
+      width: 420,
+      height: 620,
       background: 'var(--bg)', 
       borderRadius: 24, 
       boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 

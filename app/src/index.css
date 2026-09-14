@@ -31,6 +31,11 @@
   padding: 0;
 }
 
+html, body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-anthropic-sans);
   -webkit-font-smoothing: antialiased;
@@ -38,6 +43,8 @@ body {
   color: var(--text);
   line-height: 1.5;
 }
+
+img { max-width: 100%; }
 
 a {
   color: inherit;
@@ -129,8 +136,77 @@ a {
 .grid-7 { display: grid; grid-template-columns: repeat(7, 1fr); }
 
 @media (max-width: 1024px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-7 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
+  .grid-7 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* Responsive helpers para layouts a medida (inline styles) que necesitan
+   colapsar en móvil. Usan !important porque una regla de media query en
+   hoja de estilos SÍ puede pisar un style inline sin !important. */
+.split-2col,
+.split-3col {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .split-2col, .split-3col { grid-template-columns: 1fr !important; }
+}
+
+.split-2col-flex {
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .split-2col-flex { flex-direction: column !important; }
+  .split-2col-flex > * { width: 100% !important; }
+}
+
+.grid-fields {
+  min-width: 0;
+}
+@media (max-width: 700px) {
+  .grid-fields { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 480px) {
+  .grid-fields { grid-template-columns: 1fr !important; }
+}
+
+/* Contenedor de scroll horizontal para "tablas" (reales o simuladas con
+   CSS grid) que en pantallas estrechas no caben sin aplastar columnas. */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sticky-mobile-off {
+  position: sticky;
+  top: 16px;
+}
+@media (max-width: 900px) {
+  .sticky-mobile-off { position: static !important; top: auto !important; }
+}
+
+.chefbot-panel {}
+@media (max-width: 640px) {
+  .chefbot-panel {
+    width: calc(100vw - 24px) !important;
+    right: 12px !important;
+    left: 12px !important;
+    bottom: 88px !important;
+    height: min(620px, 72vh) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .chefbot-fab {
+    bottom: 20px !important;
+    right: 16px !important;
+    width: 52px !important;
+    height: 52px !important;
+  }
 }
 
 .mb-4 { margin-bottom: 4px; }
@@ -148,6 +224,51 @@ a {
 .hidden { display: none !important; }
 .block { display: block; }
 .cursor-pointer { cursor: pointer; }
+.overflow-hidden { overflow: hidden; }
+.overflow-y-auto { overflow-y: auto; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.uppercase { text-transform: uppercase; }
+.tracking-wider { letter-spacing: 0.05em; }
+.transition-transform { transition: transform 0.15s ease; }
+.hover\:scale-105:hover { transform: scale(1.05); }
+.flex-1 { flex: 1 1 0%; min-width: 0; }
+.flex-none { flex: none; }
+.justify-between { display: flex; justify-content: space-between; }
+.w-60 { width: 60px; }
+.h-60 { height: 60px; }
+.max-h-60 { max-height: 60vh; }
+.max-w-md { max-width: 480px; }
+.mr-16 { margin-right: 16px; }
+.mt-20 { margin-top: 20px; }
+.mb-2 { margin-bottom: 2px; }
+.py-6 { padding-top: 6px; padding-bottom: 6px; }
+.pl-20 { padding-left: 20px; }
+.list-disc { list-style-type: disc; }
+.space-y-4 > * + * { margin-top: 4px; }
+.space-y-8 > * + * { margin-top: 8px; }
+.rounded-16 { border-radius: 16px; }
+.shadow-xs { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.border { border: 1px solid var(--border); }
+.border-b { border-bottom: 1px solid var(--border); }
+.border-l-4 { border-left: 4px solid; }
+.border-subtle { border-color: var(--border) !important; }
+.border-accent { border-color: var(--accent) !important; }
+.border-danger { border-color: var(--danger) !important; }
+.border-success { border-color: var(--success) !important; }
+.border-warning { border-color: var(--warning) !important; }
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
 
 /* Cards & Surface */
 .card {

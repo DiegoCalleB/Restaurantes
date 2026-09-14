@@ -135,7 +135,7 @@ export function AlergenosView({ platos = [], ingredientesBase = [], actualizarSt
   return (
     <div className="view-container">
       {/* Action Bar */}
-      <div className="flex-between mb-24 no-print">
+      <div className="flex-between flex-wrap gap-16 mb-24 no-print">
         <div className="banner banner-info flex-1 mr-16 flex-center-start gap-10">
           <Info size={18} className="text-accent flex-none" />
           <span className="text-sm font-medium">
@@ -208,7 +208,8 @@ export function AlergenosView({ platos = [], ingredientesBase = [], actualizarSt
           </div>
         </div>
 
-        <table className="table-custom">
+        <div className="scroll-x">
+        <table className="table-custom" style={{ minWidth: 760 }}>
           <thead>
             <tr>
               <th>Categoría</th>
@@ -304,6 +305,7 @@ export function AlergenosView({ platos = [], ingredientesBase = [], actualizarSt
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal para editar alérgenos de un ingrediente base */}
