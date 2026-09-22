@@ -654,8 +654,6 @@ export default function DashboardView({
               </div>
             );
           })}
-          </div>
-          </div>
         </div>
       )}
 
@@ -705,8 +703,6 @@ export default function DashboardView({
             </div>
           );
         })}
-        </div>
-        </div>
       </div>
 
     </div>

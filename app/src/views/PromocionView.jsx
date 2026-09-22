@@ -547,8 +547,6 @@ export default function PromocionView({ restaurantes = [], selectedRestauranteId
             No se han encontrado medios que coincidan con la búsqueda o filtro seleccionado.
           </div>
         )}
-        </div>
-        </div>
       </div>
 
       {/* ================================================================= */}

@@ -193,6 +193,8 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
               );
             })}
           </div>
+          </div>
+          </div>
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
             <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 16 }}>Resumen de totales</div>

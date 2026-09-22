@@ -68,8 +68,6 @@ export default function AlbaranesView({ isAdmin, setView, setSelectedId, albaran
             </div>
           );
         })}
-        </div>
-        </div>
       </div>
 
       {/* VISTA MÓVIL (Tarjetas de toque fácil) */}
