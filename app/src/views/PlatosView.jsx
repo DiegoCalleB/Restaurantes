@@ -46,7 +46,7 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* SELECTOR DE MODO DE VISTA (GRID / TABLA) */}
           <div style={{ display: 'flex', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 3 }}>
             <button
@@ -192,7 +192,7 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
                   {viewMode === 'grid' ? (
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
                       gap: 20,
                       width: '100%'
                     }}>
@@ -414,7 +414,8 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
                   ) : (
                     /* VISTA TABLA CLÁSICA */
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                      <div className="scroll-x">
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 760 }}>
                         <thead>
                           <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 800, color: 'var(--textSoft)', textTransform: 'uppercase' }}>
                             <th style={{ padding: '12px 20px', width: '35%' }}>Plato</th>
@@ -487,6 +488,7 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
                           })}
                         </tbody>
                       </table>
+                      </div>
                     </div>
                    )}
                 </div>

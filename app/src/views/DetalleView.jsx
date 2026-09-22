@@ -38,7 +38,7 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div 
           onClick={() => setView('albaranes')}
           style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
@@ -65,11 +65,11 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
 
       {flaggedCount > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, background: 'var(--dangerSoft)', border: '1px solid rgba(142, 38, 38, 0.2)', borderRadius: 14, padding: '16px 20px', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--danger)', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <AlertTriangle size={16} />
             </div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--danger)', flex: 1 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--danger)', flex: 1, minWidth: 200 }}>
               Se han detectado {flaggedCount} incidencias en este albarán frente a la tarifa o pedido registrado.
             </div>
             <button
@@ -93,9 +93,9 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 20, alignItems: 'start' }}>
+      <div className="split-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 20, alignItems: 'start' }}>
         {/* Document Scanner Preview */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, position: 'sticky', top: 16, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
+        <div className="sticky-mobile-off" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
           {selected.imagenUrl ? (
             <img src={selected.imagenUrl} alt="Albarán" style={{ width: '100%', height: 'auto', borderRadius: 12 }} />
           ) : (
@@ -117,7 +117,7 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
               </span>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="grid-fields" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               {headerFields.map((f, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 11.5, color: 'var(--textSoft)', fontWeight: 700, marginBottom: 5 }}>{f.label}</div>
@@ -132,6 +132,8 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
             <div style={{ fontSize: 14.5, fontWeight: 800, marginBottom: 16 }}>Líneas de producto</div>
+            <div className="scroll-x">
+            <div style={{ minWidth: 480 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.9fr 0.9fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 8px' }}>
               <div>Producto</div><div>Cant.</div><div>Precio ud.</div><div>Total</div>
             </div>

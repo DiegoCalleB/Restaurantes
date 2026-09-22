@@ -654,6 +654,8 @@ export default function DashboardView({
               </div>
             );
           })}
+          </div>
+          </div>
         </div>
       )}
 
@@ -676,8 +678,8 @@ export default function DashboardView({
         {albaranesData.slice(0, 5).map(a => {
           const m = getStatusMeta(a.estado);
           return (
-            <div 
-              key={a.id} 
+            <div
+              key={a.id}
               onClick={() => { setSelectedId(a.id); setView('detalle'); }}
               style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.6fr 1fr 1fr 1fr 40px', alignItems: 'center', padding: '12px 8px', borderBottom: '1px solid var(--bg)', cursor: 'pointer', fontSize: 13.5, borderRadius: 8, transition: 'background 0.15s ease' }}
               onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-hover)'}
@@ -703,6 +705,8 @@ export default function DashboardView({
             </div>
           );
         })}
+        </div>
+        </div>
       </div>
 
     </div>

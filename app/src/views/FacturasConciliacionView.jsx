@@ -146,7 +146,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
       {/* Tarjeta de Resultado de Auditoría */}
       {resultado && (
         <div className={`card p-24 mb-32 border-2 ${resultado.estado === 'incidencia' ? 'border-danger bg-danger-soft' : 'border-success bg-success-soft'}`}>
-          <div className="flex-between mb-16">
+          <div className="flex-between flex-wrap gap-12 mb-16">
             <span className="font-extrabold text-lg flex-center gap-8">
               {resultado.estado === 'incidencia' ? <AlertOctagon className="text-danger" size={24} /> : <CheckCircle2 className="text-success" size={24} />}
               {resultado.proveedor} — {resultado.numeroFactura} ({resultado.periodoMes})
@@ -204,7 +204,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
 
       {/* Histórico de Facturas Conciliadas */}
       <div className="card overflow-hidden">
-        <div className="p-16 bg-surface border-b flex-between">
+        <div className="p-16 bg-surface border-b flex-between flex-wrap gap-10">
           <h2 className="title-md flex-center gap-8">
             <FileText className="text-accent" size={20} />
             <span>Histórico de Facturas Auditeadas</span>
@@ -212,7 +212,8 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
           <span className="badge badge-accent font-bold">{listFacturas.length} Facturas Registradas</span>
         </div>
 
-        <table className="table-custom">
+        <div className="scroll-x">
+        <table className="table-custom" style={{ minWidth: 800 }}>
           <thead>
             <tr>
               <th>Proveedor</th>
@@ -267,6 +268,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Modal Agente Negociador */}

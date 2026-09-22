@@ -340,7 +340,7 @@ export default function PromocionView({ restaurantes = [], selectedRestauranteId
       )}
 
       {/* HEADER METRICS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 22 }}>
+      <div className="grid-4" style={{ gap: 14, marginBottom: 22 }}>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
           <div style={{ fontSize: 11.5, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase' }}>Medios en Radar</div>
           <div style={{ fontSize: 27, fontWeight: 800, marginTop: 8 }}>{medios.length}</div>
@@ -547,6 +547,8 @@ export default function PromocionView({ restaurantes = [], selectedRestauranteId
             No se han encontrado medios que coincidan con la búsqueda o filtro seleccionado.
           </div>
         )}
+        </div>
+        </div>
       </div>
 
       {/* ================================================================= */}

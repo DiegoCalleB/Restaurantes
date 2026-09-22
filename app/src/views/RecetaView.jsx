@@ -94,7 +94,7 @@ export default function RecetaView({ selectedPlatoId, setView, setSelectedId, pl
           <p style={{ color: 'var(--textSoft)', fontSize: 14, margin: 0 }}>Análisis de rentabilidad basado en los precios medios de compra.</p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={() => setIsEditModalOpen(true)}
             style={{
@@ -144,7 +144,7 @@ export default function RecetaView({ selectedPlatoId, setView, setSelectedId, pl
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="split-2col" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, alignItems: 'start' }}>
         
         {/* Receta e Ingredientes */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>
@@ -153,10 +153,12 @@ export default function RecetaView({ selectedPlatoId, setView, setSelectedId, pl
             Ingredientes de la Receta
           </div>
           
+          <div className="scroll-x">
+          <div style={{ minWidth: 480 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', textTransform: 'uppercase', padding: '0 4px 8px' }}>
             <div>Ingrediente</div><div>Cantidad</div><div>Precio Ref.</div><div>Coste Real</div>
           </div>
-          
+
           {p.ingredientes.map((it, i) => (
             <div 
               key={i} 
@@ -190,7 +192,9 @@ export default function RecetaView({ selectedPlatoId, setView, setSelectedId, pl
               <div style={{ fontWeight: 800, color: it.isAlert ? 'var(--danger)' : 'inherit' }}>€{it.coste.toFixed(2)}</div>
             </div>
           ))}
-          
+          </div>
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 8px 4px', fontSize: 15, fontWeight: 900 }}>
             <div>Coste Total del Plato</div>
             <div>€{p.coste.toFixed(2)}</div>

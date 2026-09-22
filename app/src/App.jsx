@@ -33,6 +33,7 @@ import CartaQRView from './views/CartaQRView';
 import MarketingSocialView from './views/MarketingSocialView';
 
 function App() {
+  const isPublicMenuUrl = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('view') === 'carta_publica';
   const [currentUser, setCurrentUser] = useState({ username: 'EmilioGallego', role: 'admin' });
   const [view, setView] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
@@ -173,19 +174,39 @@ function App() {
     };
   });
 
+  // Acceso directo desde el QR de mesa: mostrar solo la carta pública,
+  // sin el panel de administración (sidebar, menú, selector de local...)
+  if (isPublicMenuUrl) {
+    return (
+      <CartaPublicaView
+        restaurantes={restaurantes}
+        platos={activePlatos}
+        selectedRestauranteId={selectedRestauranteId}
+      />
+    );
+  }
+
   if (!currentUser) {
     return <LoginView onLogin={setCurrentUser} />;
   }
 
   return (
     <div className="app-layout">
-      {/* Botón de Menú Móvil */}
-      <button 
-        className="mobile-nav-toggle"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
+      {/* Botón de cerrar el menú móvil: solo aparece con el sidebar abierto.
+          Para abrirlo en móvil se usa "Más" en la barra inferior. */}
+      {isMobileMenuOpen && (
+        <button
+          className="mobile-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <X size={24} />
+        </button>
+      )}
+
+      {/* Fondo oscuro para cerrar el sidebar tocando fuera */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
 
       {/* Backdrop para cerrar menú lateral en móvil */}
       {isMobileMenuOpen && (
@@ -268,13 +289,13 @@ function App() {
           <div className="main-header-controls">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--textSoft)' }}>Local:</span>
-              <select 
+              <select
                 value={selectedRestauranteId}
                 onChange={(e) => setSelectedRestauranteId(e.target.value)}
                 style={{
                   padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 700,
                   background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)',
-                  cursor: 'pointer', outline: 'none'
+                  cursor: 'pointer', outline: 'none', maxWidth: '100%'
                 }}
               >
                 {restaurantes.map(r => (
@@ -282,14 +303,14 @@ function App() {
                 ))}
               </select>
             </div>
-            <div 
+            <div
               onClick={() => setCurrentUser(null)}
               title="Cerrar sesión"
               style={{
               width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), var(--accentDeep))',
               color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700,
               boxShadow: '0 4px 10px -3px rgba(59, 110, 165, 0.5)',
-              cursor: 'pointer'
+              cursor: 'pointer', flexShrink: 0
             }}>
               {currentUser?.username.substring(0, 2).toUpperCase()}
             </div>
