@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Camera, Sparkles, Copy, Check, Video, Image, Megaphone, Calendar, Send, Loader2, RefreshCw, ThumbsUp, Heart, MessageCircle, Share2, AlertCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Camera, Sparkles, Copy, Check, Video, Image, Megaphone, Calendar, Send, Loader2, RefreshCw, ThumbsUp, Heart, MessageCircle, Share2, AlertCircle, Settings, CheckCircle2, Globe, ExternalLink, X, Link } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { publicarEnInstagram } from '../utils/instagramService';
+import { obtenerUrlMetaOAuth, canjearCodigoPorTokenLargaDuracion } from '../utils/instagramOAuthService';
 
 export default function MarketingSocialView({ platos = [], restaurantes = [], selectedRestauranteId }) {
   const [selectedPlatoId, setSelectedPlatoId] = useState('');
@@ -11,6 +13,18 @@ export default function MarketingSocialView({ platos = [], restaurantes = [], se
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [generatedResult, setGeneratedResult] = useState(null);
+
+  // Estado para publicación en Instagram
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishFeedback, setPublishFeedback] = useState(null); // { type: 'success' | 'error', message: '' }
+  const [showConfigModal, setShowConfigModal] = useState(false);
+
+  // Configuración local de Instagram por restaurante
+  const [configRestaurantes, setConfigRestaurantes] = useState({
+    '68d0128c-d047-48d4-8cbe-08fe151aa632': { handle: '@silvestre_tirso', webhookUrl: '', accountId: '', token: '' },
+    '9b5f1982-fb46-43cb-a393-387ec6f658ff': { handle: '@silvestre_becerril', webhookUrl: '', accountId: '', token: '' }
+  });
+
   const [historialPosts, setHistorialPosts] = useState([
     {
       id: '1',
@@ -25,9 +39,71 @@ export default function MarketingSocialView({ platos = [], restaurantes = [], se
 
   // Restaurante activo
   const restauranteActivo = useMemo(() => {
-    if (!restaurantes.length) return { nombre: 'Silvestre Vinos & Comidas' };
+    if (!restaurantes.length) return { id: 'default', nombre: 'Silvestre Vinos & Comidas' };
     return restaurantes.find(r => r.id === selectedRestauranteId) || restaurantes[0];
   }, [restaurantes, selectedRestauranteId]);
+
+  const configActiva = useMemo(() => {
+    const defaultHandle = `@${restauranteActivo.nombre.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    return configRestaurantes[restauranteActivo.id] || { handle: defaultHandle, webhookUrl: '', accountId: '', token: '' };
+  }, [configRestaurantes, restauranteActivo]);
+
+  // Capturar respuesta de redirección OAuth de Meta (?code=...)
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get('code');
+    const error = searchParams.get('error_description') || searchParams.get('error');
+
+    if (error) {
+      setPublishFeedback({
+        type: 'error',
+        message: `Error de autorización en Meta: ${error}`
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (code) {
+      const storedAppId = localStorage.getItem('meta_app_id');
+      const storedAppSecret = localStorage.getItem('meta_app_secret');
+      const redirectUri = window.location.origin + window.location.pathname;
+
+      if (storedAppId) {
+        setIsPublishing(true);
+        canjearCodigoPorTokenLargaDuracion({
+          code: code,
+          appId: storedAppId,
+          appSecret: storedAppSecret,
+          redirectUri: redirectUri
+        })
+          .then(res => {
+            setConfigRestaurantes(prev => ({
+              ...prev,
+              [restauranteActivo.id]: {
+                ...prev[restauranteActivo.id],
+                accountId: res.instagramAccountId,
+                token: res.accessToken
+              }
+            }));
+
+            setPublishFeedback({
+              type: 'success',
+              message: `¡Conexión Meta OAuth completada! Cuenta Instagram vinculada: ${res.pageName} (ID: ${res.instagramAccountId})`
+            });
+          })
+          .catch(err => {
+            setPublishFeedback({
+              type: 'error',
+              message: `Fallo al procesar autenticación OAuth: ${err.message}`
+            });
+          })
+          .finally(() => {
+            setIsPublishing(false);
+            window.history.replaceState({}, document.title, window.location.pathname);
+          });
+      }
+    }
+  }, [restauranteActivo]);
 
   // Plato seleccionado
   const platoSeleccionado = useMemo(() => {
@@ -38,10 +114,10 @@ export default function MarketingSocialView({ platos = [], restaurantes = [], se
   const handleGeneratePost = async () => {
     setLoading(true);
     setGeneratedResult(null);
+    setPublishFeedback(null);
 
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-    // Caso fallback si no hay API key configurada en cliente
     if (!apiKey) {
       setTimeout(() => {
         const nombrePlato = platoSeleccionado ? platoSeleccionado.nombre : 'Especialidad Silvestre';
@@ -60,7 +136,7 @@ export default function MarketingSocialView({ platos = [], restaurantes = [], se
           visual_idea: 'Foto con iluminación cálida lateral, desenfoque de fondo y copa de vino de acompañamiento.'
         });
         setLoading(false);
-      }, 1500);
+      }, 1200);
       return;
     }
 
@@ -85,7 +161,7 @@ DATOS DEL PRODUCTO:
 INSTRUCCIONES DE FORMATO:
 Responde ÚNICAMENTE con un JSON válido estructurado así:
 {
-  "caption": "El texto descriptivo completo del post con emojies adecuados y call-to-action",
+  "caption": "El texto descriptivo completo del post con emojis adecuados y call-to-action",
   "hashtags": ["#hashtag1", "#hashtag2", "#hashtag3", "#hashtag4", "#hashtag5"],
   "hook_inicial": "Frase gancho para llamar la atención en los primeros 3 segundos",
   "reel_script": ["Tomas de video sugeridas paso a paso para Reels"],
@@ -106,7 +182,6 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
       setGeneratedResult(parsed);
     } catch (err) {
       console.error("Error al generar post con Gemini:", err);
-      // Fallback amigable si falla la API
       setGeneratedResult({
         caption: `🍇 ¡La experiencia gastronómica que estabas buscando! Ven a probar ${platoSeleccionado?.nombre || 'nuestras especialidades'} a ${restauranteActivo.nombre}.\n\nUn bocado lleno de carácter, maridado con nuestra selección de vinos. 🍷`,
         hashtags: ['#Restaurantes', '#Foodies', '#Silvestre', '#MadridGourmet'],
@@ -117,6 +192,57 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Publicar directamente en la cuenta de Instagram del restaurante
+  const handlePublicarDirectoInstagram = async () => {
+    if (!generatedResult) return;
+
+    setIsPublishing(true);
+    setPublishFeedback(null);
+
+    const imageUrl = platoSeleccionado?.imagen_url || platoSeleccionado?.imagenUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80';
+    
+    const objRestaurante = {
+      ...restauranteActivo,
+      instagram_handle: configActiva.handle,
+      instagram_webhook_url: configActiva.webhookUrl,
+      instagram_account_id: configActiva.accountId,
+      instagram_access_token: configActiva.token
+    };
+
+    try {
+      const res = await publicarEnInstagram({
+        restaurante: objRestaurante,
+        imageUrl: imageUrl,
+        caption: generatedResult.caption,
+        hashtags: generatedResult.hashtags
+      });
+
+      setPublishFeedback({
+        type: 'success',
+        message: res.message
+      });
+
+      // Añadir al historial de publicaciones enviadas
+      const nuevoPost = {
+        id: Date.now().toString(),
+        titulo: platoSeleccionado ? platoSeleccionado.nombre : 'Promoción Instagram',
+        tipo: tipoContenido,
+        caption: generatedResult.caption,
+        hashtags: generatedResult.hashtags.join(' '),
+        creado_en: 'Justo ahora',
+        estado: `Publicado en ${configActiva.handle}`
+      };
+      setHistorialPosts([nuevoPost, ...historialPosts]);
+    } catch (err) {
+      setPublishFeedback({
+        type: 'error',
+        message: err.message
+      });
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -142,6 +268,14 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
     setHistorialPosts([nuevoPost, ...historialPosts]);
   };
 
+  const handleSaveConfig = (newConf) => {
+    setConfigRestaurantes(prev => ({
+      ...prev,
+      [restauranteActivo.id]: newConf
+    }));
+    setShowConfigModal(false);
+  };
+
   return (
     <div style={{ paddingBottom: 40 }}>
       {/* HEADER DE LA SECCIÓN */}
@@ -153,7 +287,7 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
         marginBottom: 24,
         display: 'flex',
         alignItems: 'center',
-        justify: 'space-between',
+        justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: 16
       }}>
@@ -170,14 +304,28 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
               Studio de Marketing & Instagram (IA)
             </h2>
             <div style={{ fontSize: 13, color: 'var(--textSoft)', marginTop: 2 }}>
-              Crea publicaciones, scripts de Reels y promociones virales impulsados por Gemini 2.5 Flash
+              Crea publicaciones y publica directamente en <b style={{ color: 'var(--accent)' }}>{configActiva.handle}</b> ({restauranteActivo.nombre})
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'rgba(225, 48, 108, 0.1)', borderRadius: 20, border: '1px solid rgba(225, 48, 108, 0.2)' }}>
-          <Sparkles size={14} style={{ color: '#e1306c' }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#e1306c' }}>IA Creador Activo</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => setShowConfigModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px', borderRadius: 12,
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              color: 'var(--text)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer'
+            }}
+          >
+            <Settings size={15} style={{ color: 'var(--accent)' }} /> Configurar Cuenta Instagram
+          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(225, 48, 108, 0.1)', borderRadius: 20, border: '1px solid rgba(225, 48, 108, 0.2)' }}>
+            <Sparkles size={14} style={{ color: '#e1306c' }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#e1306c' }}>IA Creador Activo</span>
+          </div>
         </div>
       </div>
 
@@ -322,11 +470,11 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
           padding: 24,
           display: 'flex',
           flexDirection: 'column',
-          justify: 'space-between'
+          justifyContent: 'space-between'
         }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Camera size={18} style={{ color: '#e1306c' }} /> Previsualización Instagram
+              <Camera size={18} style={{ color: '#e1306c' }} /> Previsualización Instagram ({configActiva.handle})
             </h3>
 
             {!generatedResult && !loading && (
@@ -352,6 +500,20 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
 
             {generatedResult && !loading && (
               <div>
+                {/* ALERTAS DE FEEDBACK DE PUBLICACIÓN */}
+                {publishFeedback && (
+                  <div style={{
+                    marginBottom: 16, padding: '12px 16px', borderRadius: 12,
+                    background: publishFeedback.type === 'success' ? 'var(--successSoft)' : 'var(--dangerSoft)',
+                    border: `1px solid ${publishFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    color: publishFeedback.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                    fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8
+                  }}>
+                    {publishFeedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                    <div>{publishFeedback.message}</div>
+                  </div>
+                )}
+
                 {/* MOCKUP CARD DE INSTAGRAM */}
                 <div style={{
                   background: '#000000',
@@ -365,15 +527,15 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #d97706, #b45309)',
+                      background: 'linear-gradient(135deg, #e1306c, #f77737)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontWeight: 800, fontSize: 12
                     }}>
-                      S
+                      {configActiva.handle.slice(1, 2).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{restauranteActivo.nombre}</div>
-                      <div style={{ fontSize: 10, color: '#8b949e' }}>Publicación sugerida</div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{configActiva.handle} ({restauranteActivo.nombre})</div>
+                      <div style={{ fontSize: 10, color: '#8b949e' }}>Publicación oficial sugerida</div>
                     </div>
                   </div>
 
@@ -428,32 +590,50 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
                 </div>
 
                 {/* BOTONES DE ACCIÓN */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
                   <button
-                    onClick={handleCopyCaption}
+                    onClick={handlePublicarDirectoInstagram}
+                    disabled={isPublishing}
                     style={{
-                      flex: 1,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                      padding: '10px', borderRadius: 10,
-                      background: copied ? 'var(--success)' : 'var(--accent)',
-                      border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer'
+                      width: '100%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      padding: '13px', borderRadius: 12,
+                      background: 'linear-gradient(135deg, #e1306c, #f77737)',
+                      border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: isPublishing ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 4px 14px rgba(225, 48, 108, 0.4)'
                     }}
                   >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? '¡Copiado al Portapapeles!' : 'Copiar Texto + Hashtags'}
+                    {isPublishing ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                    {isPublishing ? 'Publicando en Instagram...' : `🚀 Publicar Directo en Instagram (${configActiva.handle})`}
                   </button>
 
-                  <button
-                    onClick={handleGuardarEnBorradores}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '10px 14px', borderRadius: 10,
-                      background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
-                      color: 'var(--text)', fontSize: 12, fontWeight: 700, cursor: 'pointer'
-                    }}
-                  >
-                    Guardar Borrador
-                  </button>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={handleCopyCaption}
+                      style={{
+                        flex: 1,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        padding: '10px', borderRadius: 10,
+                        background: copied ? 'var(--success)' : 'var(--accent)',
+                        border: 'none', color: '#fff', fontSize: 12, fontWeight: 800, cursor: 'pointer'
+                      }}
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                      {copied ? '¡Copiado!' : 'Copiar Texto'}
+                    </button>
+
+                    <button
+                      onClick={handleGuardarEnBorradores}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '10px 14px', borderRadius: 10,
+                        background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)',
+                        color: 'var(--text)', fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                      }}
+                    >
+                      Guardar Borrador
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -526,6 +706,194 @@ Responde ÚNICAMENTE con un JSON válido estructurado así:
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* MODAL CONFIGURACIÓN INSTAGRAM POR RESTAURANTE */}
+      {showConfigModal && (
+        <InstagramConfigModal
+          restaurante={restauranteActivo}
+          config={configActiva}
+          onSave={handleSaveConfig}
+          onClose={() => setShowConfigModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function InstagramConfigModal({ restaurante, config, onSave, onClose }) {
+  const [handle, setHandle] = useState(config.handle || '');
+  const [webhookUrl, setWebhookUrl] = useState(config.webhookUrl || '');
+  const [accountId, setAccountId] = useState(config.accountId || '');
+  const [token, setToken] = useState(config.token || '');
+  
+  const [metaAppId, setMetaAppId] = useState(localStorage.getItem('meta_app_id') || '');
+  const [metaAppSecret, setMetaAppSecret] = useState(localStorage.getItem('meta_app_secret') || '');
+
+  const handleIniciarOAuth = () => {
+    if (!metaAppId) {
+      alert('Por favor introduce tu Meta App ID para iniciar la autenticación OAuth.');
+      return;
+    }
+
+    localStorage.setItem('meta_app_id', metaAppId);
+    if (metaAppSecret) localStorage.setItem('meta_app_secret', metaAppSecret);
+
+    const redirectUri = window.location.origin + window.location.pathname;
+    try {
+      const authUrl = obtenerUrlMetaOAuth({
+        appId: metaAppId,
+        redirectUri: redirectUri,
+        state: restaurante.id
+      });
+      window.location.href = authUrl;
+    } catch (err) {
+      alert(`Error al construir URL de OAuth: ${err.message}`);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 10000, padding: 16
+    }}>
+      <div style={{
+        background: 'var(--surface)', width: '100%', maxWidth: 520, borderRadius: 24,
+        border: '1px solid var(--border)', boxShadow: '0 25px 50px rgba(0,0,0,0.3)',
+        padding: 24, display: 'flex', flexDirection: 'column', gap: 16
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'linear-gradient(135deg, #e1306c, #f77737)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+            }}>
+              <Camera size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>Ajustes de Instagram</div>
+              <div style={{ fontSize: 12, color: 'var(--textSoft)' }}>{restaurante.nombre}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--textSoft)', cursor: 'pointer' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ fontSize: 12.5, color: 'var(--textSoft)', lineHeight: 1.5 }}>
+          Configura cómo publicar de forma real en la cuenta oficial de Instagram de este local.
+        </div>
+
+        {/* HANDLE / USUARIO INSTAGRAM */}
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--textSoft)', display: 'block', marginBottom: 6 }}>
+            Handle / Usuario Instagram:
+          </label>
+          <input
+            type="text"
+            value={handle}
+            onChange={e => setHandle(e.target.value)}
+            placeholder="@silvestre_tirso"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 13, outline: 'none' }}
+          />
+        </div>
+
+        {/* OPCIÓN 1: WEBHOOK (MAKE / N8N) */}
+        <div style={{ padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Globe size={15} /> Opción 1: Webhook (Make.com / n8n / Zapier) [Recomendado]
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--textSoft)', marginBottom: 10 }}>
+            Pega aquí la URL de tu Webhook en Make.com que publica en Instagram sin necesidad de Meta App Review.
+          </div>
+          <input
+            type="text"
+            value={webhookUrl}
+            onChange={e => setWebhookUrl(e.target.value)}
+            placeholder="https://hook.eu1.make.com/xxxxxxxxx"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12.5, outline: 'none' }}
+          />
+        </div>
+
+        {/* OPCIÓN 2: META GRAPH API & OAUTH 2.0 */}
+        <div style={{ padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#e1306c', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Camera size={15} /> Opción 2: Meta Graph API (OAuth 2.0 Directo)
+          </div>
+          
+          {/* LOGIN OAUTH 2.0 */}
+          <div style={{ marginTop: 10, marginBottom: 14, padding: 12, borderRadius: 12, background: 'rgba(225, 48, 108, 0.08)', border: '1px solid rgba(225, 48, 108, 0.2)' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+              🔗 Conectar Cuenta con Meta OAuth 2.0:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <input
+                type="text"
+                placeholder="Meta App ID"
+                value={metaAppId}
+                onChange={e => setMetaAppId(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 11, outline: 'none' }}
+              />
+              <input
+                type="password"
+                placeholder="Meta App Secret"
+                value={metaAppSecret}
+                onChange={e => setMetaAppSecret(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 11, outline: 'none' }}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleIniciarOAuth}
+              style={{
+                width: '100%', padding: '10px', borderRadius: 8,
+                background: 'linear-gradient(135deg, #1877f2, #4267b2)',
+                border: 'none', color: '#fff', fontSize: 12, fontWeight: 800,
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+              }}
+            >
+              <ExternalLink size={14} /> Iniciar Sesión con Facebook / Instagram (OAuth 2.0)
+            </button>
+          </div>
+
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--textSoft)', marginBottom: 6 }}>
+            O introduce credenciales manuales obtenidas de Graph API Explorer:
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input
+              type="text"
+              value={accountId}
+              onChange={e => setAccountId(e.target.value)}
+              placeholder="Instagram Account ID (ej: 1784140000000)"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12, outline: 'none' }}
+            />
+            <input
+              type="password"
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="User/Page Access Token de Meta"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', fontSize: 12, outline: 'none' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+          <button
+            onClick={onClose}
+            style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: 10, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onSave({ handle, webhookUrl, accountId, token })}
+            style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 10, fontWeight: 800, cursor: 'pointer' }}
+          >
+            Guardar Ajustes
+          </button>
         </div>
       </div>
     </div>

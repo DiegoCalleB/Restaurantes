@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Sparkles, AlertTriangle, ShieldCheck, Flame, UtensilsCrossed, Wine, Coffee, ChefHat, Info, Filter, ArrowLeft } from 'lucide-react';
+import { evaluarDietaPlato } from '../utils/dietaService';
 
 const ALERGENO_MAP = {
   gluten: { icon: '🌾', label: 'Gluten', color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' },
@@ -35,6 +36,7 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
   const [activeCategory, setActiveCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAlergeno, setFilterAlergeno] = useState('Todos');
+  const [filtroDieta, setFiltroDieta] = useState('todos'); // 'todos', 'vegetariano', 'vegano'
   const [selectedPlato, setSelectedPlato] = useState(null);
 
   // Determinar el restaurante activo
@@ -76,9 +78,14 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
         matchAlergeno = !alergenosPlato.some(a => a.toLowerCase().includes(filterAlergeno.toLowerCase()));
       }
 
-      return matchCat && matchSearch && matchAlergeno;
+      const { esVegetariano, esVegano } = evaluarDietaPlato(plato);
+      let matchDieta = true;
+      if (filtroDieta === 'vegetariano') matchDieta = esVegetariano;
+      if (filtroDieta === 'vegano') matchDieta = esVegano;
+
+      return matchCat && matchSearch && matchAlergeno && matchDieta;
     });
-  }, [platosRestaurante, activeCategory, searchTerm, filterAlergeno]);
+  }, [platosRestaurante, activeCategory, searchTerm, filterAlergeno, filtroDieta]);
 
   return (
     <div style={{
@@ -228,9 +235,44 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
           })}
         </div>
 
-        {/* FILTRO DE ALÉRGENOS (EXCLUIR) */}
-        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto' }}>
+        {/* FILTRO DE DIETA Y ALÉRGENOS (EXCLUIR) */}
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+            Dieta:
+          </span>
+          <button
+            onClick={() => setFiltroDieta('todos')}
+            style={{
+              padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer',
+              background: filtroDieta === 'todos' ? '#d97706' : 'rgba(255,255,255,0.06)', color: filtroDieta === 'todos' ? '#fff' : '#8b949e'
+            }}
+          >
+            Todas
+          </button>
+          <button
+            onClick={() => setFiltroDieta('vegetariano')}
+            style={{
+              padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              border: filtroDieta === 'vegetariano' ? '1px solid #34d399' : '1px solid rgba(255,255,255,0.1)',
+              background: filtroDieta === 'vegetariano' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.06)',
+              color: filtroDieta === 'vegetariano' ? '#34d399' : '#c9d1d9'
+            }}
+          >
+            🌱 Vegetariano
+          </button>
+          <button
+            onClick={() => setFiltroDieta('vegano')}
+            style={{
+              padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              border: filtroDieta === 'vegano' ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+              background: filtroDieta === 'vegano' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255,255,255,0.06)',
+              color: filtroDieta === 'vegano' ? '#34d399' : '#c9d1d9'
+            }}
+          >
+            🌿 Vegano
+          </button>
+
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#8b949e', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', marginLeft: 8 }}>
             Excluir alérgeno:
           </span>
           <select
@@ -279,6 +321,7 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
               const precioRaw = plato.precioVenta !== undefined ? plato.precioVenta : (plato.precio_venta !== undefined ? plato.precio_venta : 0);
               const precioNum = parseFloat(precioRaw) || 0;
               const alergenosArr = Array.isArray(plato.alergenos) ? plato.alergenos : [];
+              const { esVegetariano, esVegano } = evaluarDietaPlato(plato);
 
               return (
                 <div
@@ -307,7 +350,7 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                       <span style={{
                         fontSize: 10,
                         fontWeight: 800,
@@ -332,6 +375,22 @@ export default function CartaPublicaView({ restaurantes = [], platos = [], selec
                       }}>
                         ⏱️ {plato.tiempo_preparacion || plato.tiempoPreparacion || 15} min
                       </span>
+
+                      {esVegano ? (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                          background: 'rgba(16, 185, 129, 0.18)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)'
+                        }}>
+                          🌿 Vegano
+                        </span>
+                      ) : esVegetariano ? (
+                        <span style={{
+                          fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                          background: 'rgba(52, 211, 153, 0.12)', color: '#6ee7b7', border: '1px solid rgba(52, 211, 153, 0.25)'
+                        }}>
+                          🌱 Vegetariano
+                        </span>
+                      ) : null}
                     </div>
 
                     <h3 style={{ fontSize: 17, fontWeight: 800, margin: '4px 0 6px', color: '#fff' }}>

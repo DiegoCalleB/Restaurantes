@@ -80,45 +80,62 @@ function App() {
     }
   }, [restaurantes]);
 
-  const navGroups = [
+  const navHubs = [
     {
-      section: 'INFORMES',
-      items: [
-        { key: 'dashboard', label: 'Panel general', icon: <LayoutDashboard size={16} /> }
+      id: 'dashboard',
+      label: 'Panel General',
+      icon: <LayoutDashboard size={18} />,
+      defaultView: 'dashboard',
+      views: ['dashboard']
+    },
+    {
+      id: 'compras',
+      label: 'Compras & Control',
+      icon: <FileText size={18} />,
+      defaultView: 'albaranes',
+      views: ['albaranes', 'subir', 'facturas_conciliacion', 'pedidos', 'proveedores', 'detalle'],
+      subTabs: [
+        { key: 'albaranes', label: 'Albaranes', icon: <FileText size={14} /> },
+        { key: 'subir', label: 'Subir Albarán', icon: <UploadCloud size={14} /> },
+        { key: 'facturas_conciliacion', label: 'Caza-Trampas Facturas', icon: <FileText size={14} /> },
+        { key: 'pedidos', label: 'Pedidos 1-Click', icon: <Package size={14} /> },
+        { key: 'proveedores', label: 'Proveedores', icon: <Users size={14} /> }
       ]
     },
     {
-      section: 'COMPRAS & FACTURAS',
-      items: [
-        { key: 'albaranes', label: 'Albaranes', icon: <FileText size={16} /> },
-        { key: 'subir', label: 'Subir albarán', icon: <UploadCloud size={16} /> },
-        { key: 'pedidos', label: 'Pedidos 1-Click', icon: <Package size={16} /> },
-        { key: 'facturas_conciliacion', label: 'Caza-Trampas Facturas', icon: <FileText size={16} /> },
-        { key: 'proveedores', label: 'Proveedores', icon: <Users size={16} /> },
+      id: 'cocina',
+      label: 'Cocina & Cartas',
+      icon: <ChefHat size={18} />,
+      defaultView: 'platos',
+      views: ['platos', 'receta', 'nuevo_escandallo', 'subir_carta', 'simulador_menu', 'alergenos'],
+      subTabs: [
+        { key: 'platos', label: 'Escandallos & Costes', icon: <ChefHat size={14} /> },
+        { key: 'simulador_menu', label: 'Simulador Menú', icon: <ChefHat size={14} /> },
+        { key: 'subir_carta', label: 'Digitalizar Carta', icon: <UploadCloud size={14} /> },
+        { key: 'alergenos', label: 'Carta Alérgenos UE', icon: <ChefHat size={14} /> }
       ]
     },
     {
-      section: 'COCINA & MENÚ',
-      items: [
-        { key: 'platos', label: 'Escandallos', icon: <ChefHat size={16} /> },
-        { key: 'simulador_menu', label: 'Simulador Menú', icon: <ChefHat size={16} /> },
-        { key: 'alergenos', label: 'Carta Alérgenos', icon: <ChefHat size={16} /> },
-      ]
-    },
-    {
-      section: 'MARKETING & REDES',
-      items: [
-        { key: 'marketing_social', label: 'Studio Instagram (IA)', icon: <InstagramIcon size={16} /> },
-        { key: 'carta_qr', label: 'Carta QR & Peanas Mesa', icon: <QrCode size={16} /> },
-        { key: 'carta_publica', label: 'Ver Carta Online Pública', icon: <Smartphone size={16} /> },
-        { key: 'promocion', label: 'Promoción RRPP', icon: <Megaphone size={16} /> },
-        { key: 'chefbot_widget', label: 'ChefBot (IA)', icon: <Bot size={16} /> },
+      id: 'marketing',
+      label: 'Marketing & QR',
+      icon: <Share2 size={18} />,
+      defaultView: 'carta_qr',
+      views: ['marketing_social', 'carta_qr', 'carta_publica', 'promocion'],
+      subTabs: [
+        { key: 'carta_qr', label: 'Carta Digital & QR', icon: <QrCode size={14} /> },
+        { key: 'marketing_social', label: 'Studio Instagram (IA)', icon: <InstagramIcon size={14} /> },
+        { key: 'promocion', label: 'Prensa & RRPP', icon: <Megaphone size={14} /> },
+        { key: 'carta_publica', label: 'Vista Previa Online', icon: <Smartphone size={14} /> }
       ]
     }
   ];
 
+  const activeHub = React.useMemo(() => {
+    return navHubs.find(h => h.views.includes(view)) || navHubs[0];
+  }, [view]);
+
   const titles = {
-    dashboard: ['Panel general', 'Resumen de compras y control de albaranes'],
+    dashboard: ['Panel General', 'Resumen de compras y control de albaranes'],
     pedidos: ['Pedidos Sugeridos 1-Click', 'Faltas automáticas por Par Stock y envío por WhatsApp'],
     facturas_conciliacion: ['Conciliador "Caza-Trampas"', 'Cruza la factura del proveedor con los albaranes validados'],
     alergenos: ['Carta Oficial de Alérgenos', 'Fichas técnicas y cumplimiento del Reglamento UE 1169/2011'],
@@ -138,10 +155,10 @@ function App() {
   const [title, subtitle] = titles[view] || titles.dashboard;
   const isAdmin = true;
 
-  // Filtrar los datos globales según el restaurante activo
-  const activeAlbaranes = selectedRestauranteId === 'all' ? albaranes : albaranes.filter(a => a.restaurante_id === selectedRestauranteId);
-  const activePedidos = selectedRestauranteId === 'all' ? pedidos : pedidos.filter(p => p.restaurante_id === selectedRestauranteId);
-  const activePlatos = selectedRestauranteId === 'all' ? platos : platos.filter(p => p.restaurante_id === selectedRestauranteId);
+  // Filtrar los datos globales según el restaurante activo (permitiendo elementos sin restaurante_id asignado)
+  const activeAlbaranes = selectedRestauranteId === 'all' ? albaranes : albaranes.filter(a => !a.restaurante_id || a.restaurante_id === selectedRestauranteId);
+  const activePedidos = selectedRestauranteId === 'all' ? pedidos : pedidos.filter(p => !p.restaurante_id || p.restaurante_id === selectedRestauranteId);
+  const activePlatos = selectedRestauranteId === 'all' ? platos : platos.filter(p => !p.restaurante_id || p.restaurante_id === selectedRestauranteId);
   
   // Proveedores metrics recalculation based on active albaranes
   const activeProveedores = proveedores.map(p => {
@@ -170,6 +187,14 @@ function App() {
         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
+      {/* Backdrop para cerrar menú lateral en móvil */}
+      {isMobileMenuOpen && (
+        <div 
+          className="sidebar-backdrop"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR */}
       <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 8px 16px' }}>
@@ -179,61 +204,40 @@ function App() {
           </div>
         </div>
 
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {navGroups.map((group, idx) => {
-            const isCollapsed = !!collapsedSections[group.section];
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 800, color: 'var(--sidebarSoft)',
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            padding: '0 14px 6px', opacity: 0.85
+          }}>
+            MÓDULOS PRINCIPALES
+          </div>
+          {navHubs.map(hub => {
+            const isHubActive = activeHub.id === hub.id;
             return (
-              <div key={idx}>
-                <div 
-                  onClick={() => toggleSection(group.section)}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    fontSize: 10, fontWeight: 800, color: 'var(--sidebarSoft)',
-                    letterSpacing: '0.12em', textTransform: 'uppercase',
-                    padding: '6px 14px 4px', cursor: 'pointer', opacity: 0.85,
-                    userSelect: 'none'
-                  }}
-                >
-                  <span>{group.section}</span>
-                  {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+              <div 
+                key={hub.id}
+                onClick={() => {
+                  setView(hub.defaultView);
+                  setIsMobileMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', 
+                  borderRadius: 12, cursor: 'pointer', 
+                  background: isHubActive ? 'linear-gradient(135deg, rgba(214, 168, 72, 0.25), rgba(181, 138, 48, 0.15))' : 'transparent',
+                  border: isHubActive ? '1px solid rgba(214, 168, 72, 0.4)' : '1px solid transparent',
+                  color: isHubActive ? '#fff' : 'var(--sidebarSoft)',
+                  fontSize: 14, fontWeight: isHubActive ? 800 : 500,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{
+                  color: isHubActive ? 'var(--accent)' : 'rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center'
+                }}>
+                  {hub.icon}
                 </div>
-
-                {!isCollapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
-                    {group.items.map(n => {
-                      const active = n.key === (view === 'detalle' ? 'albaranes' : view);
-                      return (
-                        <div 
-                          key={n.key}
-                          onClick={() => {
-                            if (n.key === 'chefbot_widget') {
-                              setIsChatOpen(true);
-                            } else {
-                              setView(n.key);
-                            }
-                            setIsMobileMenuOpen(false);
-                          }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', 
-                            borderRadius: 10, cursor: 'pointer', 
-                            background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                            color: active ? '#fff' : 'var(--sidebarSoft)',
-                            fontSize: 13.5, fontWeight: active ? 700 : 500,
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <div style={{
-                            color: active ? 'var(--accentLight)' : 'rgba(255,255,255,0.3)',
-                            display: 'flex', alignItems: 'center'
-                          }}>
-                            {n.icon}
-                          </div>
-                          <span>{n.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <span>{hub.label}</span>
               </div>
             );
           })}
@@ -255,13 +259,13 @@ function App() {
 
       {/* MAIN CONTENT */}
       <main className="main-content">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 30, gap: 24 }}>
+        <div className="main-header">
           <div>
             <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>{title}</div>
             <div style={{ fontSize: 13.5, color: 'var(--textSoft)', marginTop: 5, fontWeight: 500 }}>{subtitle}</div>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
+          <div className="main-header-controls">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--textSoft)' }}>Local:</span>
               <select 
@@ -292,6 +296,51 @@ function App() {
           </div>
         </div>
 
+        {/* SUB-TABS PESTAÑAS HORIZONTALES PARA MÓDULOS CONSOLIDADOS */}
+        {activeHub.subTabs && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            overflowX: 'auto',
+            paddingBottom: 14,
+            marginBottom: 20,
+            borderBottom: '1px solid var(--border)',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            {activeHub.subTabs.map(tab => {
+              const isSubActive = view === tab.key || (tab.key === 'albaranes' && view === 'detalle') || (tab.key === 'platos' && view === 'receta') || (tab.key === 'platos' && view === 'nuevo_escandallo');
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setView(tab.key)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '9px 16px',
+                    borderRadius: 12,
+                    border: isSubActive ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    background: isSubActive ? 'rgba(214, 168, 72, 0.15)' : 'var(--surface)',
+                    color: isSubActive ? 'var(--text)' : 'var(--textSoft)',
+                    fontSize: 13,
+                    fontWeight: isSubActive ? 800 : 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSubActive ? '0 2px 8px rgba(214, 168, 72, 0.15)' : 'none'
+                  }}
+                >
+                  <span style={{ color: isSubActive ? 'var(--accent)' : 'var(--textSoft)' }}>
+                    {tab.icon}
+                  </span>
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Dynamic View Rendering */}
         {loading ? (
            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', flexDirection: 'column', color: 'var(--textSoft)', gap: 10 }}>
@@ -305,12 +354,12 @@ function App() {
            </div>
         ) : (
           <>
-            {view === 'dashboard' && <DashboardView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} allAlbaranes={albaranes} proveedoresData={activeProveedores} localesData={restaurantes} />}
+            {view === 'dashboard' && <DashboardView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} setSelectedPlatoId={setSelectedPlatoId} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} allAlbaranes={albaranes} proveedoresData={activeProveedores} localesData={restaurantes} platosData={activePlatos} />}
             {view === 'pedidos' && <PedidosView ingredientesBase={ingredientesBase} proveedores={activeProveedores} actualizarStockIngrediente={actualizarStockIngrediente} />}
             {view === 'facturas_conciliacion' && <FacturasConciliacionView albaranes={activeAlbaranes} facturasProveedor={facturasProveedor} guardarFacturaProveedor={guardarFacturaProveedor} />}
             {view === 'alergenos' && <AlergenosView platos={activePlatos} ingredientesBase={ingredientesBase} actualizarStockIngrediente={actualizarStockIngrediente} />}
             {view === 'albaranes' && <AlbaranesView isAdmin={isAdmin} setView={setView} setSelectedId={setSelectedId} albaranesFilter={albaranesFilter} setAlbaranesFilter={setAlbaranesFilter} albaranesData={activeAlbaranes} eliminarAlbaran={eliminarAlbaran} />}
-            {view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} />}
+            {view === 'detalle' && <DetalleView selectedId={selectedId} setView={setView} albaranesData={albaranes} eliminarAlbaran={eliminarAlbaran} ingredientesBase={ingredientesBase} />}
             {view === 'proveedores' && <ProveedoresView isAdmin={isAdmin} proveedoresData={activeProveedores} />}
             {view === 'subir' && <SubirView setView={setView} setSelectedId={setSelectedId} onUploadComplete={refreshData} />}
             {view === 'platos' && <PlatosView platos={activePlatos} setView={setView} setSelectedPlatoId={setSelectedPlatoId} eliminarPlato={eliminarPlato} actualizarPvpPlato={actualizarPvpPlato} actualizarImagenPlato={actualizarImagenPlato} actualizarCategoriaPlato={actualizarCategoriaPlato} ingredientesBase={ingredientesBase} actualizarEscandalloCompleto={actualizarEscandalloCompleto} />}
@@ -318,7 +367,7 @@ function App() {
             {view === 'nuevo_escandallo' && <NuevoEscandalloView setView={setView} ingredientesBase={ingredientesBase} crearEscandallo={crearEscandallo} />}
             {view === 'subir_carta' && <SubirCartaView setView={setView} selectedRestauranteId={selectedRestauranteId} onUploadComplete={refreshData} />}
             {view === 'simulador_menu' && <SimuladorMenuView platos={activePlatos} />}
-            {view === 'promocion' && <PromocionView />}
+            {view === 'promocion' && <PromocionView restaurantes={restaurantes} selectedRestauranteId={selectedRestauranteId} />}
             {view === 'marketing_social' && <MarketingSocialView platos={activePlatos} restaurantes={restaurantes} selectedRestauranteId={selectedRestauranteId} />}
             {view === 'carta_qr' && <CartaQRView restaurantes={restaurantes} selectedRestauranteId={selectedRestauranteId} onVerCartaPublica={() => setView('carta_publica')} />}
             {view === 'carta_publica' && <CartaPublicaView restaurantes={restaurantes} platos={activePlatos} selectedRestauranteId={selectedRestauranteId} onVolverAlPanel={() => setView('dashboard')} />}
@@ -335,33 +384,32 @@ function App() {
         onNavigate={setView}
       />
 
-      {/* Floating ChefBot Widget Button */}
-      {!isChatOpen && (
-        <div 
-          onClick={() => setIsChatOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: 30,
-            right: 30,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            background: 'linear-gradient(135deg, var(--accent), var(--accentDeep))',
-            color: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 10px 25px rgba(59, 110, 165, 0.4)',
-            transition: 'transform 0.2s',
-            zIndex: 1000
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-        >
-          <Bot size={28} />
-        </div>
-      )}
+      {/* Floating ChefBot Toggle Button (Abre / Cierra al volver a pulsar) */}
+      <div 
+        onClick={() => setIsChatOpen(!isChatOpen)}
+        title={isChatOpen ? "Cerrar ChefBot" : "Abrir ChefBot"}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          width: 56,
+          height: 56,
+          borderRadius: 28,
+          background: isChatOpen ? 'var(--sidebar)' : 'linear-gradient(135deg, var(--accent), var(--accentDeep))',
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.35)',
+          transition: 'all 0.2s ease',
+          zIndex: 10002
+        }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        {isChatOpen ? <X size={26} /> : <Bot size={26} />}
+      </div>
     </div>
   );
 }

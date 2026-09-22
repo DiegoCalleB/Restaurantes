@@ -1,11 +1,33 @@
-import React from 'react';
-import { ArrowLeft, Edit3, Save, CheckCircle2, AlertTriangle, FileText, DownloadCloud, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Edit3, Save, CheckCircle2, AlertTriangle, FileText, DownloadCloud, Trash2, Sparkles, Check } from 'lucide-react';
 import { getStatusMeta } from '../data';
+import { sugerirIngredienteBase } from '../utils/fuzzyMatcher';
 
-export default function DetalleView({ selectedId, setView, albaranesData = [], eliminarAlbaran }) {
+export default function DetalleView({ selectedId, setView, albaranesData = [], eliminarAlbaran, ingredientesBase = [] }) {
   const selected = albaranesData.find(a => a.id === selectedId) || albaranesData[0];
   const flaggedCount = selected.items.filter(i => i.flag).length;
   const selStatusMeta = getStatusMeta(selected.estado);
+
+  const [mapeos, setMapeos] = useState({});
+  const [guardandoMapeo, setGuardandoMapeo] = useState({});
+
+  const handleGuardarMapeo = async (lineaId, ingredienteId) => {
+    setGuardandoMapeo(prev => ({ ...prev, [lineaId]: true }));
+    try {
+      const { supabase } = await import('../supabaseClient');
+      if (supabase) {
+        await supabase
+          .from('lineas_albaran')
+          .update({ ingrediente_base_id: ingredienteId })
+          .eq('id', lineaId);
+      }
+      setMapeos(prev => ({ ...prev, [lineaId]: ingredienteId }));
+    } catch (err) {
+      console.error("Error asignando ingrediente base:", err);
+    } finally {
+      setGuardandoMapeo(prev => ({ ...prev, [lineaId]: false }));
+    }
+  };
 
   const headerFields = [
     { label: 'Proveedor', value: selected.proveedor, badgeColor: 'var(--success)', badgeBg: 'var(--successSoft)', badgeLabel: 'Extracción IA' },
@@ -114,21 +136,60 @@ export default function DetalleView({ selectedId, setView, albaranesData = [], e
               <div>Producto</div><div>Cant.</div><div>Precio ud.</div><div>Total</div>
             </div>
             
-            {selected.items.map((it, i) => (
-              <div key={i} style={{ borderRadius: 10, background: it.flag ? 'var(--dangerSoft)' : 'transparent', marginBottom: 4 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.9fr 0.9fr', padding: '11px 8px', fontSize: 13.5, alignItems: 'center' }}>
-                  <div style={{ fontWeight: 600 }}>{it.producto}</div>
-                  <div>{it.cantidad || '-'}</div>
-                  <div>{it.precioUnit ? `€${it.precioUnit}` : '-'}</div>
-                  <div style={{ fontWeight: 700 }}>{it.total ? `€${it.total}` : '-'}</div>
-                </div>
-                {it.flag && (
-                  <div style={{ fontSize: 12, color: 'var(--danger)', padding: '0 8px 12px', fontWeight: 700 }}>
-                    ⚠ {it.motivo}
+            {selected.items.map((it, i) => {
+              const candidatos = sugerirIngredienteBase(it.producto, ingredientesBase, 3);
+              const asignadoId = mapeos[it.id] || it.ingrediente_base_id;
+              const asignadoIng = ingredientesBase.find(ing => ing.id === asignadoId);
+
+              return (
+                <div key={it.id || i} style={{ borderRadius: 10, background: it.flag ? 'var(--dangerSoft)' : 'transparent', marginBottom: 8, padding: '4px 8px', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.9fr 0.9fr', padding: '8px 0', fontSize: 13.5, alignItems: 'center' }}>
+                    <div style={{ fontWeight: 700 }}>{it.producto}</div>
+                    <div>{it.cantidad || '-'}</div>
+                    <div>{it.precioUnit ? `€${it.precioUnit}` : '-'}</div>
+                    <div style={{ fontWeight: 800 }}>{it.total ? `€${it.total}` : '-'}</div>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Fuzzy Matcher Badge / Selector */}
+                  <div style={{ paddingBottom: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 11.5 }}>
+                    <span style={{ color: 'var(--textSoft)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Sparkles size={13} color="var(--accent)" /> Catálogo:
+                    </span>
+                    
+                    {asignadoIng ? (
+                      <span style={{ background: 'var(--successSoft)', color: 'var(--success)', padding: '2px 8px', borderRadius: 6, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <Check size={12} /> Vincular a: {asignadoIng.nombre}
+                      </span>
+                    ) : candidatos.length > 0 ? (
+                      <div style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+                        {candidatos.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => handleGuardarMapeo(it.id, c.id)}
+                            disabled={guardandoMapeo[it.id]}
+                            style={{
+                              fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                              background: 'var(--accentSoft)', color: 'var(--accentDeep)',
+                              border: '1px solid rgba(214, 168, 72, 0.3)', cursor: 'pointer'
+                            }}
+                          >
+                            🌱 {c.nombre} ({c.scorePct}%)
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--textSoft)', fontStyle: 'italic', fontSize: 11 }}>Sin sugerencias automáticas</span>
+                    )}
+                  </div>
+
+                  {it.flag && (
+                    <div style={{ fontSize: 11.5, color: 'var(--danger)', padding: '4px 0 6px', fontWeight: 700 }}>
+                      ⚠ {it.motivo}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 22, boxShadow: '0 1px 2px rgba(20,15,10,0.03)' }}>

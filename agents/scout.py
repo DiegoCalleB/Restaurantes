@@ -70,13 +70,13 @@ def buscar_medios_con_gemini(query: str) -> list[dict]:
         client = genai.Client(api_key=GEMINI_API_KEY)
         prompt = f"""
 Eres un especialista en RRPP de hostelería y comunicación en España.
-El usuario necesita una lista de contactos de medios de comunicación, revistas, periódicos, programas de TV/radio o tiktokers/influencers sobre: "{query}".
+El usuario necesita una lista de contactos de medios de comunicación, revistas, periódicos, programas de TV/radio, podcasts o creadores de contenido (influencers/tiktokers) sobre: "{query}".
 
 Devuelve una lista JSON de 3 a 5 contactos referentes en España altamente específicos para esa búsqueda.
 Debes especificar estrictamente:
 - "nombre": Nombre del medio, programa, revista o creador de contenido (ej: "Cocituber", "Metrópoli (El Mundo)", "7 Caníbales", "Tapas Magazine", "Cadena SER Gastronomía", "Foodies Madrid").
 - "contacto": Correo electrónico de contacto o prensa (ej: "contacto@cocituber.com", "metropoli@elmundo.es", "redaccion@7canibales.com", "prensa@foodiesmadrid.com").
-- "tipo": Debe ser EXACTAMENTE uno de los siguientes valores: "Prensa", "TV", "Radio" o "Influencer".
+- "tipo": Debe ser EXACTAMENTE uno de los 5 valores permitidos en Supabase: "Prensa", "Radio", "TV", "Podcast" o "Redes". (Mapea creadores/influencers a "Redes").
 - "alcance": Ejemplos: "Nacional", "Local Madrid", "TikTok / Instagram (500k followers)".
 - "enfoque_editorial": Breve descripción del tipo de contenido que publican y por qué encaja.
 
@@ -137,11 +137,13 @@ async def procesar_orden(orden):
 
     # 2. Guardar candidatos en Supabase
     medios_guardados = 0
-    tipos_validos = ['Prensa', 'TV', 'Radio', 'Influencer']
+    tipos_validos = ['Prensa', 'Radio', 'TV', 'Podcast', 'Redes']
 
     for medio in medios_candidatos:
         email = medio["contacto"].lower().strip()
         tipo_final = medio.get("tipo", "Prensa")
+        if tipo_final == "Influencer":
+            tipo_final = "Redes"
         if tipo_final not in tipos_validos:
             tipo_final = "Prensa"
 

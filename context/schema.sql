@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS restaurantes (
   direccion TEXT,
   telefono TEXT,
   email TEXT,
+  instagram_handle TEXT,
+  instagram_account_id TEXT,
+  instagram_access_token TEXT,
+  instagram_webhook_url TEXT,
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -56,6 +60,7 @@ CREATE TABLE IF NOT EXISTS platos (
   categoria TEXT DEFAULT 'Principal',
   precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00,
   orden INT DEFAULT 999,
+  imagen_url TEXT,
   creado_en TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

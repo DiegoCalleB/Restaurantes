@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { FileText, Upload, AlertOctagon, CheckCircle2, ShieldAlert, ArrowRight, Copy, Check } from 'lucide-react';
+import { FileText, Upload, AlertOctagon, CheckCircle2, ShieldAlert, ArrowRight, Copy, Check, MessageSquare } from 'lucide-react';
 import { extraerDatosFacturaMensual } from '../geminiService';
+import { ReclamacionModal } from '../components/ReclamacionModal';
 
 export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [], guardarFacturaProveedor }) {
   const [uploading, setUploading] = useState(false);
   const [analizando, setAnalizando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [reclamacionModalData, setReclamacionModalData] = useState(null);
 
   const listFacturas = facturasProveedor.length > 0 ? facturasProveedor : [
     {
@@ -49,20 +51,37 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
     try {
       const datosExtraidos = await extraerDatosFacturaMensual(file);
       
-      const provNombre = datosExtraidos.proveedor || '';
+      const provNombre = datosExtraidos.proveedor || 'Proveedor Desconocido';
       const impFactura = parseFloat(datosExtraidos.importeFactura) || 0;
 
-      const albaranesDelProv = albaranes.filter(a => 
-        a.proveedor.toLowerCase().includes(provNombre.toLowerCase()) || 
-        provNombre.toLowerCase().includes(a.proveedor.toLowerCase())
-      );
+      // Buscar albaranes validados en Supabase para este proveedor
+      const albaranesDelProv = albaranes.filter(a => {
+        if (!a.proveedor) return false;
+        const nameA = a.proveedor.toLowerCase().trim();
+        const nameP = provNombre.toLowerCase().trim();
+        return nameA.includes(nameP) || nameP.includes(nameA);
+      });
 
       const sumaAlbs = albaranesDelProv.reduce((sum, a) => sum + (parseFloat(a.importe) || 0), 0);
       const diff = Math.round((impFactura - sumaAlbs) * 100) / 100;
       const tieneDescuadre = Math.abs(diff) > 0.50;
 
+      const discrepanciasList = [];
+      if (tieneDescuadre) {
+        discrepanciasList.push(
+          `La factura mensual enviada por ${provNombre} (${impFactura.toFixed(2)}€) no coincide con la suma de los ${albaranesDelProv.length} albaranes validados en cocina (${sumaAlbs.toFixed(2)}€).`
+        );
+        discrepanciasList.push(
+          `Diferencia no justificada a reclamar: ${diff > 0 ? '+' : ''}${diff.toFixed(2)}€.`
+        );
+        if (albaranesDelProv.length === 0) {
+          discrepanciasList.push(`⚠️ ATENCIÓN: No se encontraron albaranes registrados en el sistema para ${provNombre} en este período.`);
+        }
+      }
+
       const nuevaFactura = {
-        proveedor: datosExtraidos.proveedor,
+        id: `fac-${Date.now()}`,
+        proveedor: provNombre,
         numeroFactura: datosExtraidos.numeroFactura || `FAC-${Date.now().toString().slice(-4)}`,
         fechaEmision: datosExtraidos.fechaEmision || new Date().toLocaleDateString('es-ES'),
         periodoMes: datosExtraidos.periodoMes || 'Mes Actual',
@@ -70,10 +89,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
         sumaAlbaranes: sumaAlbs,
         diferencia: diff,
         estado: tieneDescuadre ? 'incidencia' : 'conciliada',
-        desgloseDiscrepancias: tieneDescuadre ? [
-          `La factura global de ${datosExtraidos.proveedor} (${impFactura.toFixed(2)}€) no coincide con la suma de albaranes validados (${sumaAlbs.toFixed(2)}€).`,
-          `Diferencia a reclamar: ${diff.toFixed(2)}€.`
-        ] : []
+        desgloseDiscrepancias: discrepanciasList
       };
 
       if (guardarFacturaProveedor) {
@@ -83,22 +99,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
       setResultado(nuevaFactura);
     } catch (err) {
       console.error("Error en conciliación OCR:", err);
-      // Demo fluida en caso de error
-      const demoFactura = {
-        proveedor: 'Distribuciones Ibérica S.L.',
-        numeroFactura: 'FAC-2026-0912',
-        fechaEmision: new Date().toLocaleDateString('es-ES'),
-        periodoMes: 'Agosto 2026',
-        importeFactura: 1842.00,
-        sumaAlbaranes: 1722.00,
-        diferencia: 120.00,
-        estado: 'incidencia',
-        desgloseDiscrepancias: [
-          'Factura global incluye 120,00€ por portes urgentes no reflejados en los albaranes firmados.',
-          'Reclamación sugerida para el departamento de administración del proveedor.'
-        ]
-      };
-      setResultado(demoFactura);
+      alert("No se pudo auditar la factura: " + err.message);
     } finally {
       setUploading(false);
       setAnalizando(false);
@@ -106,7 +107,7 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
   };
 
   const copiarReclamacion = (factura) => {
-    const texto = `Estimados Sres. de ${factura.proveedor},\n\nHemos revisado la factura ${factura.numeroFactura} correspondiente a ${factura.periodoMes} por importe de ${factura.importeFactura.toFixed(2)}€.\n\nTras realizar el cruce automático contra nuestros albaranes validados en cocina (${factura.sumaAlbaranes.toFixed(2)}€), hemos detectado una diferencia de ${factura.diferencia.toFixed(2)}€ no justificada:\n${factura.desgloseDiscrepancias.join('\n')}\n\nSolicitamos la corrección de la factura o el abono correspondiente por importe de ${factura.diferencia.toFixed(2)}€.\n\nAtentamente,\nDirección de Compras.`;
+    const texto = `Estimado Departamento de Administración de ${factura.proveedor},\n\nHemos auditado vuestra factura nº ${factura.numeroFactura} (${factura.periodoMes}) recibida por un importe de ${factura.importeFactura.toFixed(2)}€.\n\nAl cruzar los datos contra nuestros albaranes de entrega firmados en cocina (${factura.sumaAlbaranes.toFixed(2)}€), hemos registrado un descuadre de ${factura.diferencia.toFixed(2)}€:\n${factura.desgloseDiscrepancias.map(d => `- ${d}`).join('\n')}\n\nRogamos reviséis el despiece y nos enviéis la factura rectificativa o nota de abono correspondiente por valor de ${factura.diferencia.toFixed(2)}€.\n\nAtentamente,\nDirección de Restaurante.`;
     navigator.clipboard.writeText(texto);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 3000);
@@ -185,11 +186,17 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
 
           {resultado.estado === 'incidencia' && (
             <button
-              onClick={() => copiarReclamacion(resultado)}
+              onClick={() => setReclamacionModalData({
+                proveedorNombre: resultado.proveedor,
+                numeroAlbaran: resultado.numeroFactura,
+                fechaAlbaran: resultado.periodoMes,
+                importeReclamado: resultado.diferencia
+              })}
               className="btn btn-primary flex-center gap-8 font-bold"
+              style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)', border: 'none' }}
             >
-              {copiado ? <Check size={16} /> : <Copy size={16} />}
-              <span>{copiado ? '¡Texto de Reclamación Copiado!' : 'Copiar Email de Reclamación'}</span>
+              <MessageSquare size={16} />
+              <span>📩 Reclamar Abono 1-Clic (WhatsApp / Email)</span>
             </button>
           )}
         </div>
@@ -240,7 +247,15 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
                   </td>
                   <td>
                     {tieneInc ? (
-                      <button onClick={() => copiarReclamacion(f)} className="btn btn-sm btn-ghost text-danger font-bold flex-center gap-4">
+                      <button 
+                        onClick={() => setReclamacionModalData({
+                          proveedorNombre: f.proveedor,
+                          numeroAlbaran: f.numeroFactura,
+                          fechaAlbaran: f.periodoMes,
+                          importeReclamado: f.diferencia
+                        })} 
+                        className="btn btn-sm btn-ghost text-danger font-bold flex-center gap-4"
+                      >
                         Reclamar <ArrowRight size={14} />
                       </button>
                     ) : (
@@ -253,6 +268,17 @@ export function FacturasConciliacionView({ albaranes = [], facturasProveedor = [
           </tbody>
         </table>
       </div>
+
+      {/* Modal Agente Negociador */}
+      {reclamacionModalData && (
+        <ReclamacionModal
+          proveedorNombre={reclamacionModalData.proveedorNombre}
+          numeroAlbaran={reclamacionModalData.numeroAlbaran}
+          fechaAlbaran={reclamacionModalData.fechaAlbaran}
+          importeReclamado={reclamacionModalData.importeReclamado}
+          onClose={() => setReclamacionModalData(null)}
+        />
+      )}
     </div>
   );
 }

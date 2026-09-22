@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChefHat, TrendingUp, TrendingDown, Eye, AlertTriangle, Info, Trash2, Camera, UploadCloud, Loader2, LayoutGrid, List, Plus, Edit, Clock } from 'lucide-react';
 import EditarEscandalloModal from './EditarEscandalloModal';
+import { evaluarDietaPlato } from '../utils/dietaService';
 
 const LISTA_CATEGORIAS = [
   'Entrantes & Raciones',
@@ -316,6 +317,13 @@ export default function PlatosView({ platos = [], setView, setSelectedPlatoId, e
                                        }} title="Tiempo estimado de preparación">
                                          <Clock size={11} /> {p.tiempo_preparacion || p.tiempoPreparacion || 15} min
                                        </span>
+
+                                       {(() => {
+                                         const { esVegetariano, esVegano } = evaluarDietaPlato(p);
+                                         if (esVegano) return <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 6, padding: '2px 6px' }}>🌿 Vegano</span>;
+                                         if (esVegetariano) return <span style={{ fontSize: 11, fontWeight: 700, background: 'rgba(52, 211, 153, 0.12)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.25)', borderRadius: 6, padding: '2px 6px' }}>🌱 Vegetariano</span>;
+                                         return null;
+                                       })()}
                                      </div>
                                    </div>
                                    <div style={{ fontSize: 18, fontWeight: 900, color: '#d97706', whiteSpace: 'nowrap' }}>

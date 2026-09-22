@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, Printer, QrCode, Info } from 'lucide-react';
 import { deducirCategoriaPlato } from '../utils/categoriaService';
+import { evaluarDietaPlato } from '../utils/dietaService';
 
 const LISTA_ALERGENOS_UE = [
   { id: 'gluten', nombre: 'Gluten', icono: '🌾' },
@@ -40,22 +41,6 @@ function deducirAlergenos(texto) {
   if (/altramuz/.test(t)) res.add('altramuces');
 
   return Array.from(res);
-}
-
-
-function evaluarDietaPlato(plato) {
-  const textoCombinado = [
-    plato.nombre,
-    ...(plato.ingredientes || []).map(i => i.nombre)
-  ].join(' ').toLowerCase();
-
-  const esCarneOPescado = /solomillo|ternera|vaca|cerdo|jamon|bacon|pollo|pato|cordero|morcilla|chorizo|pescado|sardina|merluza|bacalao|atun|bonito|salmon|anchoa|lubina|dorada|gamba|langostino|marisco|mejillon|almeja|pulpo|calamar|chipiron|ostra/.test(textoCombinado);
-  const tieneLacteosOHuevos = /queso|leche|nata|mantequilla|crema|bechamel|yogur|huevo|mayonesa|alioli|tortilla|huancaína/.test(textoCombinado);
-
-  const esVegetariano = !esCarneOPescado;
-  const esVegano = esVegetariano && !tieneLacteosOHuevos;
-
-  return { esVegetariano, esVegano };
 }
 
 export function AlergenosView({ platos = [], ingredientesBase = [], actualizarStockIngrediente }) {

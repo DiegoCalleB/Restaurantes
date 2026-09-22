@@ -18,8 +18,8 @@ urllib3.disable_warnings()
 
 def get_headers():
     return {
-        "apikey": SUPABASE_KEY,
-        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "apikey": SUPABASE_KEY or "",
+        "Authorization": f"Bearer {SUPABASE_KEY or ''}",
         "Content-Type": "application/json",
         "Prefer": "return=representation"
     }
@@ -28,26 +28,33 @@ def get_headers():
 def limpiar_texto(texto: str) -> str:
     """
     Limpia y normaliza el texto de un producto de albarán eliminando
-    medidas, cantidades y caracteres especiales.
+    tildes, medidas, cantidades y caracteres especiales.
     """
-    if not texto:
+    if not texto or not isinstance(texto, str):
         return ""
+    
+    # Minúsculas y quitar tildes
     texto = texto.lower()
-    # Eliminar unidades de medida comunes y palabras vacías de albarán
+    remplazos = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u'}
+    for orig, dest in remplazos.items():
+        texto = texto.replace(orig, dest)
+
+    # Eliminar unidades de medida comunes, empaquetados y palabras de relleno
     patrones = [
-        r'\b\d+([.,]\d+)?\s*(kg|g|gr|l|ml|cl|unid|ud|uds|caja|cajas|pack|botella|botellas|bolsa|bolsas)\b',
-        r'\b(extra|super|primera|calidad|fresco|congelado|importacion|nacional)\b',
+        r'\b\d+([.,]\d+)?\s*(kg|g|gr|l|ml|cl|unid|ud|uds|caja|cajas|pack|botella|botellas|bolsa|bolsas|lata|latas|saco)\b',
+        r'\b(extra|super|primera|1a|2a|calidad|fresco|congelado|importacion|nacional|pack|oferta)\b',
         r'[^\w\s]'
     ]
     for pat in patrones:
         texto = re.sub(pat, ' ', texto)
+
     return " ".join(texto.split())
 
 
 def calcular_similitud(prod_albaran: str, ingrediente_base: str) -> float:
     """
     Calcula la puntuación de similitud entre 0.0 y 1.0 utilizando el algoritmo
-    SequenceMatcher (basado en difflib / Levenshtein modificado).
+    SequenceMatcher (basado en difflib / Levenshtein modificado) y análisis de tokens.
     """
     norm_albaran = limpiar_texto(prod_albaran)
     norm_ingrediente = limpiar_texto(ingrediente_base)
@@ -55,25 +62,42 @@ def calcular_similitud(prod_albaran: str, ingrediente_base: str) -> float:
     if not norm_albaran or not norm_ingrediente:
         return 0.0
 
-    # 1. Coincidencia exacta de palabras clave
-    if norm_ingrediente in norm_albaran:
-        return 0.90
+    # 1. Coincidencia exacta tras normalizado
+    if norm_albaran == norm_ingrediente:
+        return 1.0
 
-    # 2. SequenceMatcher ratio
+    # 2. Coincidencia por conjunto de palabras (Token Set Ratio)
+    words_ingr = set(norm_ingrediente.split())
+    words_alb = set(norm_albaran.split())
+
+    if words_ingr and words_ingr.issubset(words_alb):
+        return 0.92
+
+    if words_alb and words_alb.issubset(words_ingr):
+        return 0.88
+
+    # 3. SequenceMatcher Ratio (difflib)
     matcher = SequenceMatcher(None, norm_albaran, norm_ingrediente)
     ratio = matcher.ratio()
 
-    # 3. Token set ratio manual (si todas las palabras de ingrediente están en albarán)
-    words_ingr = set(norm_ingrediente.split())
-    words_alb = set(norm_albaran.split())
-    if words_ingr and words_ingr.issubset(words_alb):
-        return max(ratio, 0.85)
+    # Bonus si comparten la raíz de palabras significativas (excluyendo stopwords)
+    stopwords = {'de', 'del', 'el', 'la', 'los', 'las', 'en', 'con', 'para', 'a', 'y', 'un', 'una', 'por'}
+    words_ingr_sig = {w for w in words_ingr if w not in stopwords and len(w) > 2}
+    words_alb_sig = {w for w in words_alb if w not in stopwords and len(w) > 2}
 
-    return ratio
+    common_words = words_ingr_sig.intersection(words_alb_sig)
+    if common_words:
+        ratio = max(ratio, 0.70 + (len(common_words) * 0.10))
+
+    return round(min(1.0, ratio), 2)
 
 
 def obtener_ingredientes_base():
     """Obtiene la lista completa de ingredientes base registrados en Supabase."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("[WARN] SUPABASE_URL o SUPABASE_KEY no configurados.")
+        return []
+
     url = f"{SUPABASE_URL}/rest/v1/ingredientes_base?select=id,nombre,unidad_medida,precio_estimado"
     try:
         res = requests.get(url, headers=get_headers(), verify=False, timeout=10)
@@ -86,6 +110,9 @@ def obtener_ingredientes_base():
 
 def obtener_lineas_sin_vincular():
     """Obtiene las líneas de albarán que aún no tienen ingrediente_base_id asignado."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return []
+
     url = f"{SUPABASE_URL}/rest/v1/lineas_albaran?ingrediente_base_id=is.null&select=id,albaran_id,producto,cantidad,precio_unitario"
     try:
         res = requests.get(url, headers=get_headers(), verify=False, timeout=10)
@@ -98,6 +125,9 @@ def obtener_lineas_sin_vincular():
 
 def vincular_linea_con_ingrediente(linea_id: str, ingrediente_id: str, nuevo_precio: float = None):
     """Asocia la línea de albarán al ingrediente base y actualiza el precio de referencia."""
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return False
+
     url_linea = f"{SUPABASE_URL}/rest/v1/lineas_albaran?id=eq.{linea_id}"
     body = {"ingrediente_base_id": ingrediente_id}
     

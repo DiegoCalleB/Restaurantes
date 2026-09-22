@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User, Loader2, Sparkles, X, Megaphone, Check, ArrowRight, RefreshCw, Mail } from 'lucide-react';
-import { consultarChefBot } from '../geminiService';
+import { Bot, Send, User, Loader2, Sparkles, X, Megaphone, Check, ArrowRight, RefreshCw, Mail, Trash2, CheckSquare, Square } from 'lucide-react';
+import { consultarChefBot, guardarMediosSeleccionados } from '../geminiService';
 import ReactMarkdown from 'react-markdown';
 
 function ActionScoutCard({ action, onNavigate }) {
@@ -115,68 +115,196 @@ function ActionScoutCard({ action, onNavigate }) {
   );
 }
 
-function ActionMediosEncontradosCard({ action, onNavigate }) {
-  const { termino, medios } = action;
+function ActionMediosPropuestosCard({ action, selectedRestauranteId, onNavigate }) {
+  const { termino, medios: initialMedios } = action;
+  const [medios, setMedios] = useState(initialMedios || []);
+  const [status, setStatus] = useState(action.status || 'proposed'); // 'proposed' | 'accepted' | 'discarded'
+  const [saving, setSaving] = useState(false);
+  const [guardadosCount, setGuardadosCount] = useState(0);
+
+  const toggleMedioSelection = (id) => {
+    if (status !== 'proposed') return;
+    setMedios(prev => prev.map(m => m.id === id ? { ...m, seleccionado: !m.seleccionado } : m));
+  };
+
+  const handleTipoChange = (id, newTipo) => {
+    if (status !== 'proposed') return;
+    setMedios(prev => prev.map(m => m.id === id ? { ...m, tipo: newTipo } : m));
+  };
+
+  const handleContactoChange = (id, newContacto) => {
+    if (status !== 'proposed') return;
+    setMedios(prev => prev.map(m => m.id === id ? { ...m, contacto: newContacto } : m));
+  };
+
+  const handleAceptar = async () => {
+    const seleccionados = medios.filter(m => m.seleccionado);
+    if (seleccionados.length === 0) {
+      alert("Por favor, selecciona al menos un medio para guardar.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const guardados = await guardarMediosSeleccionados(seleccionados, selectedRestauranteId);
+      setGuardadosCount(guardados.length);
+      setStatus('accepted');
+    } catch (err) {
+      alert("Error al guardar los medios seleccionados: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDescartar = () => {
+    setStatus('discarded');
+  };
+
+  const seleccionadosCount = medios.filter(m => m.seleccionado).length;
 
   return (
     <div style={{ marginTop: 12, padding: 14, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Sparkles size={14} /> Contactos Encontrados e Insertados
+          <Sparkles size={14} /> Contactos Propuestos
         </span>
         <span style={{ 
           fontSize: 11, 
-          background: 'rgba(39, 174, 96, 0.1)', 
-          color: 'var(--success)', 
+          background: status === 'accepted' ? 'rgba(39, 174, 96, 0.1)' : status === 'discarded' ? 'rgba(235, 87, 87, 0.1)' : 'rgba(242, 201, 76, 0.1)', 
+          color: status === 'accepted' ? 'var(--success)' : status === 'discarded' ? 'var(--danger)' : 'var(--warning)', 
           padding: '2px 8px', borderRadius: 10, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4
         }}>
-          ✅ Añadidos a Supabase
+          {status === 'accepted' ? `✅ ${guardadosCount} Guardados` : status === 'discarded' ? '❌ Descartados' : '⏳ Pendiente Revisión'}
         </span>
       </div>
 
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>
         🔍 Búsqueda: <b>"{termino}"</b>
       </div>
 
-      {medios && medios.length > 0 ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-          {medios.map((m, i) => (
-            <div key={m.id || i} style={{ background: 'var(--bg)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', fontSize: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)' }}>{m.nombre}</span>
-                <span style={{ fontSize: 10, background: 'var(--accentSoft)', color: 'var(--accent)', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
-                  {m.tipo}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent)', fontSize: 11.5, fontWeight: 600, marginBottom: 4 }}>
-                <Mail size={12} /> {m.contacto}
-              </div>
-              {m.alcance && (
-                <div style={{ fontSize: 11, color: 'var(--textSoft)', marginBottom: 2 }}>
-                  📍 <b>Alcance:</b> {m.alcance}
+      {status === 'proposed' && medios.length > 0 && (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12, maxHeight: 280, overflowY: 'auto' }}>
+            {medios.map((m) => (
+              <div 
+                key={m.id} 
+                style={{ 
+                  background: m.seleccionado ? 'var(--bg)' : 'rgba(0,0,0,0.02)', 
+                  padding: '10px 12px', borderRadius: 10, 
+                  border: m.seleccionado ? '1px solid var(--accent)' : '1px solid var(--border)', 
+                  fontSize: 12, opacity: m.seleccionado ? 1 : 0.6,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <button 
+                    onClick={() => toggleMedioSelection(m.id)}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, color: m.seleccionado ? 'var(--accent)' : 'var(--textSoft)' }}
+                  >
+                    {m.seleccionado ? <CheckSquare size={18} /> : <Square size={18} />}
+                  </button>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontWeight: 800, fontSize: 13, color: 'var(--text)' }}>{m.nombre}</span>
+                      <select
+                        value={m.tipo}
+                        onChange={(e) => handleTipoChange(m.id, e.target.value)}
+                        style={{
+                          fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+                          border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--accent)',
+                          cursor: 'pointer', outline: 'none'
+                        }}
+                      >
+                        {['Prensa', 'Radio', 'TV', 'Podcast', 'Redes'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <Mail size={12} style={{ color: 'var(--textSoft)' }} />
+                      <input 
+                        type="text" 
+                        value={m.contacto} 
+                        onChange={(e) => handleContactoChange(m.id, e.target.value)}
+                        style={{ 
+                          fontSize: 11.5, color: 'var(--accent)', fontWeight: 600, 
+                          background: 'transparent', border: 'none', borderBottom: '1px dashed var(--border)',
+                          outline: 'none', width: '100%'
+                        }}
+                      />
+                    </div>
+
+                    {m.alcance && (
+                      <div style={{ fontSize: 11, color: 'var(--textSoft)', marginBottom: 2 }}>
+                        📍 <b>Alcance:</b> {m.alcance}
+                      </div>
+                    )}
+                    {m.enfoque_editorial && (
+                      <div style={{ fontSize: 11, color: 'var(--textSoft)', fontStyle: 'italic' }}>
+                        "{m.enfoque_editorial}"
+                      </div>
+                    )}
+                    {m.yaExiste && (
+                      <div style={{ marginTop: 4, fontSize: 10, fontWeight: 700, color: 'var(--warning)', background: 'rgba(242, 201, 76, 0.1)', padding: '2px 6px', borderRadius: 4, display: 'inline-block' }}>
+                        ⚠️ Ya existe en tu base de datos
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-              {m.enfoque_editorial && (
-                <div style={{ fontSize: 11, color: 'var(--textSoft)', fontStyle: 'italic' }}>
-                  "{m.enfoque_editorial}"
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ fontSize: 12, color: 'var(--textSoft)', marginBottom: 10 }}>
-          No se encontraron nuevos contactos únicos o ya estaban registrados.
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button
+              onClick={handleDescartar}
+              disabled={saving}
+              style={{
+                flex: 1, background: 'transparent', border: '1px solid var(--border)',
+                color: 'var(--danger)', padding: '8px 12px', borderRadius: 10,
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: 6
+              }}
+            >
+              <X size={14} /> Descartar Todo
+            </button>
+            
+            <button
+              onClick={handleAceptar}
+              disabled={saving || seleccionadosCount === 0}
+              style={{
+                flex: 2, background: seleccionadosCount > 0 ? 'var(--accent)' : 'var(--border)',
+                color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 10,
+                fontSize: 12.5, fontWeight: 700, cursor: (saving || seleccionadosCount === 0) ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+              }}
+            >
+              {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
+              {saving ? 'Guardando en Supabase...' : `Aceptar y Guardar (${seleccionadosCount})`}
+            </button>
+          </div>
+        </>
+      )}
+
+      {status === 'accepted' && (
+        <div style={{ fontSize: 12.5, color: 'var(--textSoft)', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>✅ Se han guardado <b>{guardadosCount} contactos</b> seleccionados en la tabla <code>rrpp_medios</code> de Supabase.</div>
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('promocion')}
+              style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            >
+              <Megaphone size={14} /> Ver en Radar de Medios en Pestaña RRPP <ArrowRight size={14} />
+            </button>
+          )}
         </div>
       )}
 
-      {onNavigate && (
-        <button
-          onClick={() => onNavigate('promocion')}
-          style={{ width: '100%', marginTop: 4, background: 'var(--accent)', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-        >
-          <Megaphone size={14} /> Ver Radar de Medios en Pestaña RRPP <ArrowRight size={14} />
-        </button>
+      {status === 'discarded' && (
+        <div style={{ fontSize: 12, color: 'var(--textSoft)', fontStyle: 'italic', padding: '4px 0' }}>
+          ❌ Has descartado esta propuesta. No se ha modificado la base de datos.
+        </div>
       )}
     </div>
   );
@@ -207,6 +335,9 @@ function ActionPitchCard({ action, onNavigate }) {
         });
       }
       setStatus('applied');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rrpp_medios_updated'));
+      }
     } catch (e) {
       console.error("Error aprobando pitch:", e);
     } finally {
@@ -342,21 +473,10 @@ export default function ChefBotView({ contextoDatos, selectedRestauranteId, isOp
   };
 
   return (
-    <div style={{ 
-      display: isOpen ? 'flex' : 'none', 
-      flexDirection: 'column', 
-      position: 'fixed', 
-      bottom: 100, 
-      right: 30, 
-      width: 420, 
-      height: 620, 
-      background: 'var(--bg)', 
-      borderRadius: 24, 
-      boxShadow: '0 10px 40px rgba(0,0,0,0.15)', 
-      zIndex: 2000,
-      border: '1px solid var(--border)',
-      overflow: 'hidden'
-    }}>
+    <div 
+      className="chefbot-drawer"
+      style={{ display: isOpen ? 'flex' : 'none' }}
+    >
       
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
@@ -405,9 +525,10 @@ export default function ChefBotView({ contextoDatos, selectedRestauranteId, isOp
                 <ReactMarkdown>{m.text}</ReactMarkdown>
 
                 {/* Tarjetas de Acción Propuesta (Human-in-the-Loop estilo BandManager) */}
-                {m.action && m.action.type === 'rrpp_medios_encontrados' && (
-                  <ActionMediosEncontradosCard 
+                {m.action && (m.action.type === 'rrpp_medios_propuestos' || m.action.type === 'rrpp_medios_encontrados') && (
+                  <ActionMediosPropuestosCard 
                     action={m.action} 
+                    selectedRestauranteId={selectedRestauranteId}
                     onNavigate={onNavigate} 
                   />
                 )}
