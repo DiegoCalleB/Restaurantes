@@ -1,28 +1,125 @@
-:root {
-  --font-anthropic-sans: "Manrope", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --bg: #F8F9FA;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+/* Variables por defecto y Modo Oscuro (Dark Glassmorphism) */
+:root, [data-theme="dark"] {
+  --font-anthropic-sans: "Plus Jakarta Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  
+  --bg: #0B0F19;
+  --surface: #131B2E;
+  --surface-hover: #1E293B;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-dark: rgba(255, 255, 255, 0.16);
+  --text: #F8FAFC;
+  --textSoft: #94A3B8;
+  --sidebar: #060911;
+  --sidebarSoft: #64748B;
+  
+  --accent: #F59E0B;
+  --accentDeep: #D97706;
+  --accentLight: #FEF3C7;
+  --accentSoft: rgba(245, 158, 11, 0.15);
+  
+  --success: #10B981;
+  --successSoft: rgba(16, 185, 129, 0.15);
+  --warning: #F59E0B;
+  --warningSoft: rgba(245, 158, 11, 0.15);
+  --danger: #EF4444;
+  --dangerSoft: rgba(239, 68, 68, 0.15);
+  --whatsapp: #25D366;
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.6);
+
+  /* Tarjetas temáticas en modo oscuro */
+  --hero-bg: linear-gradient(135deg, #1E1B4B 0%, #0F172A 60%, #1E293B 100%);
+  --hero-text: #FFFFFF;
+  --hero-subtext: #CBD5E1;
+  --hero-border: rgba(255, 255, 255, 0.12);
+
+  --widget-bg: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --widget-border: rgba(255, 255, 255, 0.1);
+  --widget-text: #FFFFFF;
+  --widget-subtext: #94A3B8;
+  --widget-box-bg: rgba(255, 255, 255, 0.04);
+  --widget-input-bg: #0F172A;
+
+  --semaforo-danger-bg: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(19, 27, 46, 0.9) 100%);
+  --semaforo-danger-border: rgba(239, 68, 68, 0.35);
+  --semaforo-danger-text: #F87171;
+  
+  --semaforo-success-bg: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(19, 27, 46, 0.9) 100%);
+  --semaforo-success-border: rgba(16, 185, 129, 0.35);
+  --semaforo-success-text: #34D399;
+
+  --semaforo-warning-bg: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(19, 27, 46, 0.9) 100%);
+  --semaforo-warning-border: rgba(245, 158, 11, 0.35);
+  --semaforo-warning-text: #FBBF24;
+
+  --semaforo-inner-bg: rgba(0, 0, 0, 0.35);
+  --semaforo-inner-border: rgba(255, 255, 255, 0.08);
+  --semaforo-btn-bg: rgba(255, 255, 255, 0.08);
+}
+
+/* Modo Claro (Light Theme) */
+[data-theme="light"] {
+  --font-anthropic-sans: "Plus Jakarta Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  
+  --bg: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-hover: #F1F3F5;
-  --border: #E9ECEF;
-  --border-dark: #DEE2E6;
-  --text: #1E293B;
+  --surface-hover: #F1F5F9;
+  --border: #E2E8F0;
+  --border-dark: #CBD5E1;
+  --text: #0F172A;
   --textSoft: #64748B;
   --sidebar: #0F172A;
   --sidebarSoft: #94A3B8;
-  --accent: #D6A848;
-  --accentDeep: #B58A30;
-  --accentLight: #F3E8C4;
+  
+  --accent: #D97706;
+  --accentDeep: #B45309;
+  --accentLight: #FEF3C7;
   --accentSoft: #FFFBEB;
-  --success: #10B981;
+  
+  --success: #059669;
   --successSoft: #ECFDF5;
-  --warning: #F59E0B;
+  --warning: #D97706;
   --warningSoft: #FFFBEB;
-  --danger: #EF4444;
+  --danger: #DC2626;
   --dangerSoft: #FEF2F2;
-  --whatsapp: #25D366;
+  --whatsapp: #16A34A;
+  
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+  /* Tarjetas temáticas en modo claro */
+  --hero-bg: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  --hero-text: #78350F;
+  --hero-subtext: #92400E;
+  --hero-border: rgba(245, 158, 11, 0.35);
+
+  --widget-bg: #FFFFFF;
+  --widget-border: #E2E8F0;
+  --widget-text: #0F172A;
+  --widget-subtext: #64748B;
+  --widget-box-bg: #F8FAFC;
+  --widget-input-bg: #FFFFFF;
+
+  --semaforo-danger-bg: linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 100%);
+  --semaforo-danger-border: #FCA5A5;
+  --semaforo-danger-text: #991B1B;
+
+  --semaforo-success-bg: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%);
+  --semaforo-success-border: #86EFAC;
+  --semaforo-success-text: #166534;
+
+  --semaforo-warning-bg: linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%);
+  --semaforo-warning-border: #FDE68A;
+  --semaforo-warning-text: #92400E;
+
+  --semaforo-inner-bg: #F8FAFC;
+  --semaforo-inner-border: #E2E8F0;
+  --semaforo-btn-bg: #F1F5F9;
 }
 
 * {
@@ -528,9 +625,15 @@ a {
 .main-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 30px;
   gap: 24px;
+}
+
+.main-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .sidebar-backdrop {
@@ -763,5 +866,97 @@ a {
 .mobile-bottom-nav-hidden {
   transform: translateY(100%);
 }
+
+/* ==========================================
+   EMIL KOWALSKI & TASTE UI DESIGN SYSTEM
+   ========================================== */
+
+/* Números tabulares para prevenir saltos de layout en métricas */
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Micro-interacciones de presión física (Spring Feeling) */
+.btn-press {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+
+.btn-press:active {
+  transform: scale(0.97) translateY(1px) !important;
+}
+
+/* Tarjeta con iluminación ambiental y hover elevado */
+.card-glow {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-glow:hover {
+  border-color: rgba(214, 168, 72, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(214, 168, 72, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Animación de entrada fluida estilo Apple / Framer */
+@keyframes fadeInUpScale {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUpScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Contenedor Icon Badge Refinado */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.icon-badge-gold {
+  background: rgba(214, 168, 72, 0.12);
+  color: var(--accentDeep);
+  border: 1px solid rgba(214, 168, 72, 0.25);
+}
+
+.icon-badge-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.icon-badge-rose {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.icon-badge-amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.icon-badge-indigo {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366F1;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
 
 

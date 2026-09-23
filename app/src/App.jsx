@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, FileText, UploadCloud, Users, ChevronRight, ChevronDown, Loader2, Bot, Package, Menu, X, ChefHat, LogOut, Megaphone, QrCode, Smartphone, Share2 } from 'lucide-react';
+import { LayoutDashboard, FileText, UploadCloud, Users, ChevronRight, ChevronDown, Loader2, Bot, Package, Menu, X, ChefHat, LogOut, Megaphone, QrCode, Smartphone, Share2, Sun, Moon } from 'lucide-react';
 import './index.css';
 import { useAppData } from './useAppData';
 
@@ -43,6 +43,22 @@ function App() {
   const [albaranesFilter, setAlbaranesFilter] = useState('Todos');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+
+  // Estado de Tema (Dark / Light) con auto-detección del sistema por defecto y persistencia
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   const toggleSection = (sectionTitle) => {
     setCollapsedSections(prev => ({
@@ -312,6 +328,29 @@ function App() {
                 ))}
               </select>
             </div>
+
+            {/* BOTÓN CONMUTADOR MODO CLARO / MODO OSCURO */}
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              className="btn-press"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              {theme === 'dark' ? <Sun size={18} style={{ color: '#FBBF24' }} /> : <Moon size={18} style={{ color: '#6366F1' }} />}
+            </button>
+
             <div
               onClick={() => setCurrentUser(null)}
               title="Cerrar sesión"

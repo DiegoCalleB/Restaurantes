@@ -121,23 +121,37 @@ export default function DashboardView({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
       {/* 1. RESUMEN EJECUTIVO CHEFBOT IA & BOTÓN GIGANTE FOTO ALBARÁN */}
       <div style={{
-        background: 'linear-gradient(135deg, #1E1B4B 0%, #0F172A 60%, #1E293B 100%)',
+        background: 'var(--hero-bg)',
         borderRadius: 20,
         padding: '24px 28px',
-        color: '#fff',
-        boxShadow: '0 12px 30px rgba(30, 27, 75, 0.25)',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        color: 'var(--hero-text)',
+        boxShadow: 'var(--shadow-md)',
+        border: '1px solid var(--hero-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: 20
+        gap: 20,
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: '1 1 400px' }}>
+        {/* Glow de ambiente de fondo */}
+        <div style={{
+          position: 'absolute',
+          top: -60,
+          right: -60,
+          width: 220,
+          height: 220,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0) 70%)',
+          pointerEvents: 'none'
+        }}></div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: '1 1 400px', zIndex: 1 }}>
           <div style={{
             width: 56,
             height: 56,
@@ -147,37 +161,37 @@ export default function DashboardView({
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 4px 16px rgba(214, 168, 72, 0.4)',
+            boxShadow: '0 4px 16px rgba(245, 158, 11, 0.4)',
             flexShrink: 0
           }}>
             <Bot size={30} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>
+              <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--hero-text)', letterSpacing: '-0.3px' }}>
                 Resumen Ejecutivo ChefBot IA
               </span>
               <span style={{
-                background: 'rgba(214, 168, 72, 0.2)',
+                background: 'rgba(245, 158, 11, 0.2)',
                 color: 'var(--accent)',
                 fontSize: 11,
                 fontWeight: 800,
                 padding: '3px 10px',
                 borderRadius: 20,
-                border: '1px solid rgba(214, 168, 72, 0.4)',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
                 textTransform: 'uppercase'
               }}>
                 En Vivo
               </span>
             </div>
-            <div style={{ fontSize: 13.5, color: '#CBD5E1', marginTop: 6, lineHeight: 1.4, fontWeight: 500 }}>
+            <div style={{ fontSize: 13.5, color: 'var(--hero-subtext)', marginTop: 6, lineHeight: 1.4, fontWeight: 500 }}>
               {albaranesConIncidencia.length > 0 || platosEnRiesgo.length > 0 ? (
                 <>
-                  {albaranesConIncidencia.length > 0 && <span>⚠️ Detectadas <strong>{albaranesConIncidencia.length} discrepancias</strong> en facturas de proveedores. </span>}
-                  {platosEnRiesgo.length > 0 && <span>🍽️ Hay <strong>{platosEnRiesgo.length} platos</strong> con margen vulnerable.</span>}
+                  {albaranesConIncidencia.length > 0 && <span><AlertTriangle size={15} style={{ display: 'inline', color: 'var(--danger)', verticalAlign: '-2px' }} /> Detectadas <strong className="tabular-nums">{albaranesConIncidencia.length} discrepancias</strong> en facturas. </span>}
+                  {platosEnRiesgo.length > 0 && <span><ChefHat size={15} style={{ display: 'inline', color: 'var(--warning)', verticalAlign: '-2px' }} /> Hay <strong className="tabular-nums">{platosEnRiesgo.length} platos</strong> con margen vulnerable.</span>}
                 </>
               ) : (
-                <span>✨ <strong>Todo bajo control hoy.</strong> Compras sin sobrecostes detectados y rentabilidad media de carta en un sólido <strong>{margenMedioPct.toFixed(1)}%</strong>.</span>
+                <span><Sparkles size={15} style={{ display: 'inline', color: 'var(--accent)', verticalAlign: '-2px' }} /> <strong>Todo bajo control hoy.</strong> Compras sin sobrecostes y rentabilidad media en un sólido <strong className="tabular-nums">{margenMedioPct.toFixed(1)}%</strong>.</span>
               )}
             </div>
           </div>
@@ -186,6 +200,7 @@ export default function DashboardView({
         {/* MEGA BOTÓN CTA FOTO ALBARÁN EN 3 SEGUNDOS */}
         <button
           onClick={() => setView('subir')}
+          className="btn-press"
           style={{
             background: 'linear-gradient(135deg, var(--accent) 0%, var(--accentDeep) 100%)',
             color: '#fff',
@@ -198,12 +213,10 @@ export default function DashboardView({
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            boxShadow: '0 8px 24px rgba(214, 168, 72, 0.4)',
-            transition: 'transform 0.2s ease, boxShadow 0.2s ease',
+            boxShadow: '0 8px 24px rgba(245, 158, 11, 0.35)',
+            zIndex: 1,
             flexShrink: 0
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
           <Camera size={24} />
           <div style={{ textAlign: 'left' }}>
@@ -215,12 +228,12 @@ export default function DashboardView({
 
       {/* WIDGET DESTACADO: CALCULADORA EXPRESS DE CIERRE DE CAJA */}
       <div style={{
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        background: 'var(--widget-bg)',
         borderRadius: 20,
         padding: 24,
-        color: '#fff',
-        boxShadow: '0 10px 25px rgba(15, 23, 42, 0.4)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        color: 'var(--widget-text)',
+        boxShadow: 'var(--shadow-md)',
+        border: '1px solid var(--widget-border)',
         display: 'flex',
         flexDirection: 'column',
         gap: 16
@@ -235,22 +248,23 @@ export default function DashboardView({
               <DollarSign size={22} />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>Calculadora Express de Cierre de Caja</div>
-              <div style={{ fontSize: 12, color: '#94A3B8' }}>Calcula tu margen limpio y Food Cost estimado de hoy al instante</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--widget-text)' }}>Calculadora Express de Cierre de Caja</div>
+              <div style={{ fontSize: 12, color: 'var(--widget-subtext)' }}>Calcula tu margen limpio y Food Cost estimado de hoy al instante</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.06)', padding: '6px 14px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#CBD5E1' }}>Ventas del día:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--widget-box-bg)', padding: '6px 14px', borderRadius: 12, border: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--widget-subtext)' }}>Ventas del día:</span>
             <input
               type="number"
               value={ventasDiaInput}
               onChange={(e) => setVentasDiaInput(e.target.value)}
               placeholder="Ej: 2100"
+              className="tabular-nums"
               style={{
                 width: 100, padding: '6px 10px', borderRadius: 8,
-                background: '#0F172A', border: '1px solid var(--accent)',
-                color: '#fff', fontSize: 14, fontWeight: 800, outline: 'none'
+                background: 'var(--widget-input-bg)', border: '1px solid var(--accent)',
+                color: 'var(--text)', fontSize: 14, fontWeight: 800, outline: 'none'
               }}
             />
             <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)' }}>€</span>
@@ -260,28 +274,28 @@ export default function DashboardView({
         {cierreCalculado.ventasBrutas > 0 && (
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14,
-            paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)'
+            paddingTop: 12, borderTop: '1px solid var(--border)'
           }}>
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>Ventas Brutas</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 2 }}>€{cierreCalculado.ventasBrutas.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+            <div style={{ background: 'var(--widget-box-bg)', borderRadius: 12, padding: 14, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--widget-subtext)', textTransform: 'uppercase' }}>Ventas Brutas</div>
+              <div className="tabular-nums" style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>€{cierreCalculado.ventasBrutas.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
             </div>
 
-            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>Coste Materia Prima ({cierreCalculado.foodCostPct}%)</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#F87171', marginTop: 2 }}>-€{cierreCalculado.costeMateriaPrima.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+            <div style={{ background: 'var(--widget-box-bg)', borderRadius: 12, padding: 14, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--widget-subtext)', textTransform: 'uppercase' }}>Coste Materia Prima (<span className="tabular-nums">{cierreCalculado.foodCostPct}%</span>)</div>
+              <div className="tabular-nums" style={{ fontSize: 20, fontWeight: 900, color: 'var(--danger)', marginTop: 2 }}>-€{cierreCalculado.costeMateriaPrima.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
             </div>
 
-            <div style={{ background: 'rgba(16, 185, 129, 0.12)', borderRadius: 12, padding: 14, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#34D399', textTransform: 'uppercase' }}>Margen Limpio del Día ({cierreCalculado.margenPct}%)</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#10B981', marginTop: 2 }}>+€{cierreCalculado.margenEuros.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
+            <div style={{ background: 'var(--successSoft)', borderRadius: 12, padding: 14, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>Margen Limpio del Día (<span className="tabular-nums">{cierreCalculado.margenPct}%</span>)</div>
+              <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 900, color: 'var(--success)', marginTop: 2 }}>+€{cierreCalculado.margenEuros.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div>
             </div>
           </div>
         )}
 
         <div style={{
-          fontSize: 12.5, color: '#E2E8F0', background: 'rgba(214, 168, 72, 0.12)',
-          borderRadius: 12, padding: '10px 14px', border: '1px solid rgba(214, 168, 72, 0.25)',
+          fontSize: 12.5, color: 'var(--text)', background: 'var(--accentSoft)',
+          borderRadius: 12, padding: '10px 14px', border: '1px solid rgba(245, 158, 11, 0.25)',
           display: 'flex', alignItems: 'center', gap: 8
         }}>
           <Sparkles size={16} style={{ color: 'var(--accent)', flexShrink: 0 }} />
@@ -298,6 +312,7 @@ export default function DashboardView({
           
           <div 
             onClick={() => setView('subir')}
+            className="btn-press"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -310,8 +325,8 @@ export default function DashboardView({
               transition: 'all 0.15s ease',
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
           >
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--accentSoft)', color: 'var(--accentDeep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <UploadCloud size={20} />
@@ -324,6 +339,7 @@ export default function DashboardView({
 
           <div 
             onClick={() => setView('pedidos')}
+            className="btn-press"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -336,8 +352,8 @@ export default function DashboardView({
               transition: 'all 0.15s ease',
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--whatsapp)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--whatsapp)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
           >
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(37, 211, 102, 0.12)', color: 'var(--whatsapp)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Package size={20} />
@@ -350,6 +366,7 @@ export default function DashboardView({
 
           <div 
             onClick={() => setView('facturas_conciliacion')}
+            className="btn-press"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -362,8 +379,8 @@ export default function DashboardView({
               transition: 'all 0.15s ease',
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
           >
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FileText size={20} />
@@ -376,6 +393,7 @@ export default function DashboardView({
 
           <div 
             onClick={() => setView('carta_qr')}
+            className="btn-press"
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
@@ -388,8 +406,8 @@ export default function DashboardView({
               transition: 'all 0.15s ease',
               boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; }}
           >
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(168, 85, 247, 0.1)', color: '#A855F7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <QrCode size={20} />
@@ -403,6 +421,7 @@ export default function DashboardView({
           <button
             onClick={handleExport}
             disabled={exporting}
+            className="btn-press"
             style={{
               background: 'linear-gradient(135deg, var(--accent), var(--accentDeep))',
               color: '#fff',
@@ -435,11 +454,11 @@ export default function DashboardView({
         
         {/* BLOQUE 1: COMPRAS Y FACTURAS */}
         <div style={{
-          background: totalIncidencias > 0 ? 'linear-gradient(135deg, #FEF2F2 0%, #FFF 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #FFF 100%)',
-          border: `2px solid ${totalIncidencias > 0 ? '#FCA5A5' : '#86EFAC'}`,
+          background: totalIncidencias > 0 ? 'var(--semaforo-danger-bg)' : 'var(--semaforo-success-bg)',
+          border: `1px solid ${totalIncidencias > 0 ? 'var(--semaforo-danger-border)' : 'var(--semaforo-success-border)'}`,
           borderRadius: 20,
           padding: 24,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          boxShadow: 'var(--shadow-md)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -450,35 +469,35 @@ export default function DashboardView({
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12,
-                  background: totalIncidencias > 0 ? '#FEE2E2' : '#DCFCE7',
-                  color: totalIncidencias > 0 ? '#DC2626' : '#16A34A',
+                  background: totalIncidencias > 0 ? 'var(--dangerSoft)' : 'var(--successSoft)',
+                  color: totalIncidencias > 0 ? 'var(--danger)' : 'var(--success)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   {totalIncidencias > 0 ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: totalIncidencias > 0 ? '#991B1B' : '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: totalIncidencias > 0 ? 'var(--danger)' : 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Salud de Compras y Facturas
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>
-                    {totalIncidencias > 0 ? `${totalIncidencias} Sobrecostes Detectados` : 'Compras Limpias Sin Incidencias'}
+                    {totalIncidencias > 0 ? <><span className="tabular-nums">{totalIncidencias}</span> Sobrecostes Detectados</> : 'Compras Limpias Sin Incidencias'}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 12, border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'var(--semaforo-inner-bg)', borderRadius: 12, padding: 12, border: '1px solid var(--semaforo-inner-border)' }}>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>GASTO MES ACUMULADO</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>€{totalGastoStr}</div>
-                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>{totalAlbaranes} albaranes procesados</div>
+                <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>€{totalGastoStr}</div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}><span className="tabular-nums">{totalAlbaranes}</span> albaranes procesados</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>INCIDENCIAS DE PRECIO</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: totalIncidencias > 0 ? '#DC2626' : '#16A34A' }}>
+                <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 900, color: totalIncidencias > 0 ? 'var(--danger)' : 'var(--success)' }}>
                   {totalIncidencias}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>{incidenciasPrecio} precio · {incidenciasCantidad} cantidad</div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}><span className="tabular-nums">{incidenciasPrecio}</span> precio · <span className="tabular-nums">{incidenciasCantidad}</span> cantidad</div>
               </div>
             </div>
           </div>
@@ -488,9 +507,10 @@ export default function DashboardView({
               if (setAlbaranesFilter) setAlbaranesFilter(totalIncidencias > 0 ? 'Incidencias' : 'Todos');
               setView('albaranes');
             }}
+            className="btn-press"
             style={{
               width: '100%',
-              background: totalIncidencias > 0 ? '#DC2626' : 'var(--surface)',
+              background: totalIncidencias > 0 ? 'var(--danger)' : 'var(--semaforo-btn-bg)',
               color: totalIncidencias > 0 ? '#fff' : 'var(--text)',
               border: totalIncidencias > 0 ? 'none' : '1px solid var(--border)',
               borderRadius: 12,
@@ -510,11 +530,11 @@ export default function DashboardView({
 
         {/* BLOQUE 2: RENTABILIDAD Y CARTA */}
         <div style={{
-          background: platosEnRiesgo.length > 0 ? 'linear-gradient(135deg, #FFFBEB 0%, #FFF 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #FFF 100%)',
-          border: `2px solid ${platosEnRiesgo.length > 0 ? '#FDE68A' : '#86EFAC'}`,
+          background: platosEnRiesgo.length > 0 ? 'var(--semaforo-warning-bg)' : 'var(--semaforo-success-bg)',
+          border: `1px solid ${platosEnRiesgo.length > 0 ? 'var(--semaforo-warning-border)' : 'var(--semaforo-success-border)'}`,
           borderRadius: 20,
           padding: 24,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          boxShadow: 'var(--shadow-md)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -525,34 +545,34 @@ export default function DashboardView({
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12,
-                  background: platosEnRiesgo.length > 0 ? '#FEF3C7' : '#DCFCE7',
-                  color: platosEnRiesgo.length > 0 ? '#D97706' : '#16A34A',
+                  background: platosEnRiesgo.length > 0 ? 'var(--warningSoft)' : 'var(--successSoft)',
+                  color: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--success)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                   {platosEnRiesgo.length > 0 ? <ShieldAlert size={24} /> : <ChefHat size={24} />}
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: platosEnRiesgo.length > 0 ? '#B45309' : '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Rentabilidad & Margen Carta
                   </div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>
-                    {platosEnRiesgo.length > 0 ? `${platosEnRiesgo.length} Platos en Alerta de Margen` : 'Carta Altamente Rentable'}
+                    {platosEnRiesgo.length > 0 ? <><span className="tabular-nums">{platosEnRiesgo.length}</span> Platos en Alerta de Margen</> : 'Carta Altamente Rentable'}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 12, border: '1px solid rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'var(--semaforo-inner-bg)', borderRadius: 12, padding: 12, border: '1px solid var(--semaforo-inner-border)' }}>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>MARGEN BRUTO MEDIO</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: margenMedioPct >= 70 ? '#16A34A' : '#D97706' }}>
+                <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 900, color: margenMedioPct >= 70 ? 'var(--success)' : 'var(--warning)' }}>
                   {margenMedioPct.toFixed(1)}%
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>Objetivo recomendado ≥ 70%</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>PLATOS VULNERABLES</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: platosEnRiesgo.length > 0 ? '#D97706' : '#16A34A' }}>
+                <div className="tabular-nums" style={{ fontSize: 22, fontWeight: 900, color: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--success)' }}>
                   {platosEnRiesgo.length}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>Margen &lt; 65% o alza de coste</div>
@@ -562,9 +582,10 @@ export default function DashboardView({
 
           <button
             onClick={() => setView('platos')}
+            className="btn-press"
             style={{
               width: '100%',
-              background: platosEnRiesgo.length > 0 ? '#D97706' : 'var(--surface)',
+              background: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--semaforo-btn-bg)',
               color: platosEnRiesgo.length > 0 ? '#fff' : 'var(--text)',
               border: platosEnRiesgo.length > 0 ? 'none' : '1px solid var(--border)',
               borderRadius: 12,
