@@ -3,7 +3,8 @@ import { getInitials, getAvatarBg, getStatusMeta } from '../data';
 import { 
   ArrowUpRight, ArrowDownRight, ChevronRight, CheckCircle2, AlertTriangle, 
   Eye, UploadCloud, Download, Loader2, TrendingUp, ChefHat, Package, 
-  FileText, QrCode, ShieldAlert, Sparkles, AlertCircle, ArrowRight, DollarSign
+  FileText, QrCode, ShieldAlert, Sparkles, AlertCircle, ArrowRight, DollarSign,
+  Bot, Camera
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
@@ -122,98 +123,95 @@ export default function DashboardView({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
-      {/* 1. CENTRO DE ATENCIÓN URGENTE (BANNER INTELIGENTE DE ALERTAS) */}
-      {(albaranesConIncidencia.length > 0 || platosEnRiesgo.length > 0) && (
-        <div style={{
-          background: 'linear-gradient(135deg, #FFF5F5 0%, #FFFBEB 100%)',
-          border: '1px solid rgba(239, 68, 68, 0.25)',
-          borderRadius: 16,
-          padding: '18px 24px',
-          boxShadow: '0 4px 14px rgba(239, 68, 68, 0.06)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 16
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 12,
-              background: '#FEE2E2',
-              color: '#EF4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <AlertTriangle size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#991B1B', display: 'flex', alignItems: 'center', gap: 8 }}>
-                Atención requerida para el Gerente
-                <span style={{ background: '#EF4444', color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 10, fontWeight: 700 }}>
-                  {(albaranesConIncidencia.length > 0 ? 1 : 0) + (platosEnRiesgo.length > 0 ? 1 : 0)} Alertas
-                </span>
-              </div>
-              <div style={{ fontSize: 13, color: '#7F1D1D', marginTop: 2, fontWeight: 500 }}>
-                {albaranesConIncidencia.length > 0 && `• ${albaranesConIncidencia.length} albarán(es) con discrepancias de precio o cantidad. `}
-                {platosEnRiesgo.length > 0 && `• ${platosEnRiesgo.length} plato(s) con margen < 65% o subidas de materia prima.`}
-              </div>
-            </div>
+      {/* 1. RESUMEN EJECUTIVO CHEFBOT IA & BOTÓN GIGANTE FOTO ALBARÁN */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1E1B4B 0%, #0F172A 60%, #1E293B 100%)',
+        borderRadius: 20,
+        padding: '24px 28px',
+        color: '#fff',
+        boxShadow: '0 12px 30px rgba(30, 27, 75, 0.25)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 20
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flex: '1 1 400px' }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, var(--accent), var(--accentDeep))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 16px rgba(214, 168, 72, 0.4)',
+            flexShrink: 0
+          }}>
+            <Bot size={30} />
           </div>
-
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {albaranesConIncidencia.length > 0 && (
-              <button
-                onClick={() => {
-                  if (setAlbaranesFilter) setAlbaranesFilter('Incidencias');
-                  setView('albaranes');
-                }}
-                style={{
-                  background: '#EF4444',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '9px 16px',
-                  borderRadius: 10,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)'
-                }}
-              >
-                Revisar Albaranes <ArrowRight size={14} />
-              </button>
-            )}
-
-            {platosEnRiesgo.length > 0 && (
-              <button
-                onClick={() => setView('platos')}
-                style={{
-                  background: '#F59E0B',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '9px 16px',
-                  borderRadius: 10,
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
-                }}
-              >
-                Revisar Escandallos <ArrowRight size={14} />
-              </button>
-            )}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.3px' }}>
+                Resumen Ejecutivo ChefBot IA
+              </span>
+              <span style={{
+                background: 'rgba(214, 168, 72, 0.2)',
+                color: 'var(--accent)',
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '3px 10px',
+                borderRadius: 20,
+                border: '1px solid rgba(214, 168, 72, 0.4)',
+                textTransform: 'uppercase'
+              }}>
+                En Vivo
+              </span>
+            </div>
+            <div style={{ fontSize: 13.5, color: '#CBD5E1', marginTop: 6, lineHeight: 1.4, fontWeight: 500 }}>
+              {albaranesConIncidencia.length > 0 || platosEnRiesgo.length > 0 ? (
+                <>
+                  {albaranesConIncidencia.length > 0 && <span>⚠️ Detectadas <strong>{albaranesConIncidencia.length} discrepancias</strong> en facturas de proveedores. </span>}
+                  {platosEnRiesgo.length > 0 && <span>🍽️ Hay <strong>{platosEnRiesgo.length} platos</strong> con margen vulnerable.</span>}
+                </>
+              ) : (
+                <span>✨ <strong>Todo bajo control hoy.</strong> Compras sin sobrecostes detectados y rentabilidad media de carta en un sólido <strong>{margenMedioPct.toFixed(1)}%</strong>.</span>
+              )}
+            </div>
           </div>
         </div>
-      )}
+
+        {/* MEGA BOTÓN CTA FOTO ALBARÁN EN 3 SEGUNDOS */}
+        <button
+          onClick={() => setView('subir')}
+          style={{
+            background: 'linear-gradient(135deg, var(--accent) 0%, var(--accentDeep) 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 16,
+            padding: '16px 28px',
+            fontSize: 15,
+            fontWeight: 900,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            boxShadow: '0 8px 24px rgba(214, 168, 72, 0.4)',
+            transition: 'transform 0.2s ease, boxShadow 0.2s ease',
+            flexShrink: 0
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          <Camera size={24} />
+          <div style={{ textAlign: 'left' }}>
+            <div>Digitalizar Albarán en 3s</div>
+            <div style={{ fontSize: 11, opacity: 0.9, fontWeight: 600 }}>Cámara o Foto con OCR IA</div>
+          </div>
+        </button>
+      </div>
 
       {/* WIDGET DESTACADO: CALCULADORA EXPRESS DE CIERRE DE CAJA */}
       <div style={{
@@ -432,69 +430,156 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* 3. TARJETAS KPIS PRINCIPALES (VIVAS & REALES) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+      {/* 3. SEMÁFORO DEL NEGOCIO (2 BLOQUES GIGANTES DE CONTROL EJECUTIVO) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
         
-        {/* KPI 1: Gasto Total */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Gasto Compras (Mes)</span>
-            <div style={{ padding: 6, borderRadius: 8, background: 'var(--accentSoft)', color: 'var(--accentDeep)' }}>
-              <TrendingUp size={16} />
+        {/* BLOQUE 1: COMPRAS Y FACTURAS */}
+        <div style={{
+          background: totalIncidencias > 0 ? 'linear-gradient(135deg, #FEF2F2 0%, #FFF 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #FFF 100%)',
+          border: `2px solid ${totalIncidencias > 0 ? '#FCA5A5' : '#86EFAC'}`,
+          borderRadius: 20,
+          padding: 24,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: 16
+        }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: totalIncidencias > 0 ? '#FEE2E2' : '#DCFCE7',
+                  color: totalIncidencias > 0 ? '#DC2626' : '#16A34A',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {totalIncidencias > 0 ? <AlertTriangle size={24} /> : <CheckCircle2 size={24} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: totalIncidencias > 0 ? '#991B1B' : '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Salud de Compras y Facturas
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>
+                    {totalIncidencias > 0 ? `${totalIncidencias} Sobrecostes Detectados` : 'Compras Limpias Sin Incidencias'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 12, border: '1px solid rgba(0,0,0,0.05)' }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>GASTO MES ACUMULADO</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>€{totalGastoStr}</div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>{totalAlbaranes} albaranes procesados</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>INCIDENCIAS DE PRECIO</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: totalIncidencias > 0 ? '#DC2626' : '#16A34A' }}>
+                  {totalIncidencias}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>{incidenciasPrecio} precio · {incidenciasCantidad} cantidad</div>
+              </div>
             </div>
           </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px', color: 'var(--text)' }}>€{totalGastoStr}</div>
-          <div style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 600, marginTop: 4 }}>
-            {totalAlbaranes} albaranes procesados
-          </div>
+
+          <button
+            onClick={() => {
+              if (setAlbaranesFilter) setAlbaranesFilter(totalIncidencias > 0 ? 'Incidencias' : 'Todos');
+              setView('albaranes');
+            }}
+            style={{
+              width: '100%',
+              background: totalIncidencias > 0 ? '#DC2626' : 'var(--surface)',
+              color: totalIncidencias > 0 ? '#fff' : 'var(--text)',
+              border: totalIncidencias > 0 ? 'none' : '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8
+            }}
+          >
+            {totalIncidencias > 0 ? '🚨 Reclamar Incidencias de Compras' : 'Ver Todos los Albaranes'} <ArrowRight size={16} />
+          </button>
         </div>
 
-        {/* KPI 2: Incidencias */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Incidencias Compras</span>
-            <div style={{ padding: 6, borderRadius: 8, background: totalIncidencias > 0 ? 'var(--dangerSoft)' : 'var(--successSoft)', color: totalIncidencias > 0 ? 'var(--danger)' : 'var(--success)' }}>
-              <AlertTriangle size={16} />
+        {/* BLOQUE 2: RENTABILIDAD Y CARTA */}
+        <div style={{
+          background: platosEnRiesgo.length > 0 ? 'linear-gradient(135deg, #FFFBEB 0%, #FFF 100%)' : 'linear-gradient(135deg, #F0FDF4 0%, #FFF 100%)',
+          border: `2px solid ${platosEnRiesgo.length > 0 ? '#FDE68A' : '#86EFAC'}`,
+          borderRadius: 20,
+          padding: 24,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: 16
+        }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 12,
+                  background: platosEnRiesgo.length > 0 ? '#FEF3C7' : '#DCFCE7',
+                  color: platosEnRiesgo.length > 0 ? '#D97706' : '#16A34A',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {platosEnRiesgo.length > 0 ? <ShieldAlert size={24} /> : <ChefHat size={24} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: platosEnRiesgo.length > 0 ? '#B45309' : '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Rentabilidad & Margen Carta
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--text)', marginTop: 2 }}>
+                    {platosEnRiesgo.length > 0 ? `${platosEnRiesgo.length} Platos en Alerta de Margen` : 'Carta Altamente Rentable'}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px', color: totalIncidencias > 0 ? 'var(--danger)' : 'var(--success)' }}>
-            {totalIncidencias}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 600, marginTop: 4 }}>
-            {incidenciasPrecio} sobrecostes · {incidenciasCantidad} de cantidad
-          </div>
-        </div>
 
-        {/* KPI 3: Margen Carta */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Margen Bruto Carta</span>
-            <div style={{ padding: 6, borderRadius: 8, background: margenMedioPct >= 70 ? 'var(--successSoft)' : 'var(--warningSoft)', color: margenMedioPct >= 70 ? 'var(--success)' : 'var(--warning)' }}>
-              <ChefHat size={16} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 18, background: 'rgba(255,255,255,0.7)', borderRadius: 12, padding: 12, border: '1px solid rgba(0,0,0,0.05)' }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>MARGEN BRUTO MEDIO</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: margenMedioPct >= 70 ? '#16A34A' : '#D97706' }}>
+                  {margenMedioPct.toFixed(1)}%
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>Objetivo recomendado ≥ 70%</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)', fontWeight: 700 }}>PLATOS VULNERABLES</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: platosEnRiesgo.length > 0 ? '#D97706' : '#16A34A' }}>
+                  {platosEnRiesgo.length}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--textSoft)' }}>Margen &lt; 65% o alza de coste</div>
+              </div>
             </div>
           </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px', color: margenMedioPct >= 70 ? 'var(--success)' : 'var(--text)' }}>
-            {margenMedioPct.toFixed(1)}%
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 600, marginTop: 4 }}>
-            Objetivo salud hostelería: ≥ 70%
-          </div>
-        </div>
 
-        {/* KPI 4: Platos en Alerta */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Platos en Riesgo</span>
-            <div style={{ padding: 6, borderRadius: 8, background: platosEnRiesgo.length > 0 ? 'var(--warningSoft)' : 'var(--successSoft)', color: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--success)' }}>
-              <ShieldAlert size={16} />
-            </div>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: '-0.5px', color: platosEnRiesgo.length > 0 ? 'var(--warning)' : 'var(--success)' }}>
-            {platosEnRiesgo.length}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--textSoft)', fontWeight: 600, marginTop: 4 }}>
-            Margen inferior a 65% o insumos al alza
-          </div>
+          <button
+            onClick={() => setView('platos')}
+            style={{
+              width: '100%',
+              background: platosEnRiesgo.length > 0 ? '#D97706' : 'var(--surface)',
+              color: platosEnRiesgo.length > 0 ? '#fff' : 'var(--text)',
+              border: platosEnRiesgo.length > 0 ? 'none' : '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '12px 16px',
+              fontSize: 13,
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8
+            }}
+          >
+            {platosEnRiesgo.length > 0 ? '🍽️ Revisar Escandallos en Riesgo' : 'Ver Todos los Escandallos'} <ArrowRight size={16} />
+          </button>
         </div>
 
       </div>

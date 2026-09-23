@@ -131,6 +131,15 @@ function App() {
     }
   ];
 
+  // Pestañas del menú inferior en móvil (el loop operativo diario)
+  const mobileTabs = [
+    { key: 'dashboard', label: 'Panel', icon: <LayoutDashboard size={21} /> },
+    { key: 'albaranes', label: 'Albaranes', icon: <FileText size={21} /> },
+    { key: '__chefbot__', label: 'ChefBot', icon: <Bot size={24} />, isCenter: true },
+    { key: 'pedidos', label: 'Pedidos', icon: <Package size={21} /> },
+    { key: '__more__', label: 'Más', icon: <Menu size={21} /> },
+  ];
+
   const activeHub = React.useMemo(() => {
     return navHubs.find(h => h.views.includes(view)) || navHubs[0];
   }, [view]);
@@ -405,8 +414,9 @@ function App() {
         onNavigate={setView}
       />
 
-      {/* Floating ChefBot Toggle Button (Abre / Cierra al volver a pulsar) */}
+      {/* Floating ChefBot Toggle Button (Solo visible en escritorio) */}
       <div 
+        className="chefbot-fab"
         onClick={() => setIsChatOpen(!isChatOpen)}
         title={isChatOpen ? "Cerrar ChefBot" : "Abrir ChefBot"}
         style={{
@@ -431,6 +441,36 @@ function App() {
       >
         {isChatOpen ? <X size={26} /> : <Bot size={26} />}
       </div>
+
+      {/* Menú inferior de navegación en móvil (se oculta si el sidebar está abierto) */}
+      <nav className={`mobile-bottom-nav ${isMobileMenuOpen ? 'mobile-bottom-nav-hidden' : ''}`}>
+        {mobileTabs.map(tab => {
+          const isActive = tab.isCenter
+            ? (tab.key === '__chefbot__' ? isChatOpen : isMobileMenuOpen)
+            : (view === 'detalle' ? tab.key === 'albaranes' : view === tab.key);
+
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => {
+                if (tab.key === '__chefbot__') {
+                  setIsChatOpen(prev => !prev);
+                } else if (tab.key === '__more__') {
+                  setIsMobileMenuOpen(true);
+                } else {
+                  setView(tab.key);
+                  setIsMobileMenuOpen(false);
+                }
+              }}
+              className={`mobile-nav-item ${tab.isCenter ? 'center' : ''} ${isActive ? 'active' : ''}`}
+            >
+              <span className="mobile-nav-icon-wrap">{tab.icon}</span>
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
